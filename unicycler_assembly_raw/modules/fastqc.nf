@@ -12,7 +12,8 @@ process FASTQC {
     path limits, stageAs: 'limits/*'
 
     output:
-    path "${input_file.simpleName}_fastqc.html", emit: outHtmlFile
+    path "output.html", emit: outHtmlFile
+    path "output.txt", emit: outTextFile
 
     script:
     def adapters = adapters.simpleName != params.NULL ? "--adapters ${adapters}" : ""

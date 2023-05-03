@@ -1,1 +1,5 @@
 sample_data/
+work/
+.nextflow
+.nextflow.log*
+outputs/

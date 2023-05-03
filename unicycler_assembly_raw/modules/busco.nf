@@ -12,6 +12,7 @@ process BUSCO {
     path "busco_galaxy/run_*/missing_busco_list.tsv", emit: outBuscoMissing
     path "busco_galaxy/run_*/short_summary.txt", emit: outBuscoSum
     path "busco_galaxy/run_*/full_table.tsv", emit: outBuscoTable
+    path "BUSCO_summaries/busco_figure.png", emit: outSummaryImage
 
     script:
     """
@@ -24,6 +25,8 @@ process BUSCO {
     --lineage_dataset "acidobacteria_odb10" \
     --mode "geno" \
     --out "busco_galaxy" \
+    "acidobacteria_odb10" \
+    "human" \
     """
 
 }

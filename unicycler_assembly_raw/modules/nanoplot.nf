@@ -6,11 +6,12 @@ process NANOPLOT {
     publishDir "${params.outdir}/nanoplot"
 
     input:
-    path fastq
+    path unknown1
 
     output:
     path "LogTransformed_HistogramReadlength.*", emit: outLogReadLength
     path "NanoStats.txt", emit: outNanostats
+    path "NanoStats_post_filtering.txt", emit: outNanostatsPostFiltering
     path "HistogramReadlength.*", emit: outReadLength
     path "NanoPlot-report.html", emit: outputHtml
 
@@ -23,7 +24,9 @@ process NANOPLOT {
     --readtype "1D" \
     --threads 4 \
     -o "." \
-    --fastq ${fastq}
+    "1D" \
+    "aliceblue" \
+    "png" \
     """
 
 }

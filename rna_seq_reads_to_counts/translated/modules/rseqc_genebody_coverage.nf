@@ -6,8 +6,8 @@ process RSEQC_GENEBODY_COVERAGE {
     publishDir "${params.outdir}/rseqc_genebody_coverage"
 
     input:
-    path option_r
-    path unknown1
+    path alignments
+    path reference_bed
 
     output:
     path "output.geneBodyCoverage.curves.pdf", emit: outputcurvespdf
@@ -16,7 +16,8 @@ process RSEQC_GENEBODY_COVERAGE {
     script:
     """
     geneBody_coverage.py \
-    -r ${option_r} \
+    -i ${alignments} \
+    -r ${reference_bed} \
     --minimum_length 100 \
     -o "output" \
     """

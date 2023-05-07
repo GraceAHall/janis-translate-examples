@@ -1,7 +1,6 @@
 nextflow.enable.dsl=2
 
 process RSEQC_READ_DISTRIBUTION {
-    debug true
     container "quay.io/biocontainers/rseqc:2.6.4--py27hf8a1672_2"
     publishDir "${params.outdir}/rseqc_read_distribution"
 
@@ -10,7 +9,7 @@ process RSEQC_READ_DISTRIBUTION {
     path option_r
 
     output:
-    stdout, emit: outputFile
+    path "output", emit: outputFile
 
     script:
     """

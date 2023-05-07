@@ -6,6 +6,7 @@ include { FASTQC as FASTQC2 } from './modules/fastqc'
 include { HISAT2 } from './modules/hisat2'
 include { FEATURECOUNTS } from './modules/featurecounts'
 include { PICARD_MARKDUPLICATES } from './modules/picard_markduplicates'
+include { GATK_SORTSAM } from './modules/gatk_sortsam'
 include { SAMTOOLS_IDXSTATS } from './modules/samtools_idxstats'
 include { RSEQC_GENEBODY_COVERAGE } from './modules/rseqc_genebody_coverage'
 include { RSEQC_INFER_EXPERIMENT } from './modules/rseqc_infer_experiment'
@@ -15,57 +16,61 @@ include { MULTIQC } from './modules/multiqc'
 
 
 // data which will be passed as channels
-ch_in_input_fastqs_collection   = Channel.fromPath( params.in_input_fastqs_collection ).toList()
-ch_in_input_reference_gene_bed  = Channel.fromPath( params.in_input_reference_gene_bed )
+ch_fastqs_collection    = Channel.fromPath( params.fastqs_collection )
+reference_bed           = Channel.fromPath( params.reference_bed )
+reference_gtf           = Channel.fromPath( params.reference_gtf )
+hisat2_index            = Channel.fromPath( params.hisat2_index ).toList()
 
 
 workflow {
 
     FASTQC1(
-        ch_in_input_fastqs_collection.flatten()
+        ch_fastqs_collection
     )
 
     CUTADAPT(
-        ch_in_input_fastqs_collection
+        ch_fastqs_collection
     )
 
     FASTQC2(
-        CUTADAPT.out.out1
+        CUTADAPT.out.trimmed
     )
 
     HISAT2(
-        CUTADAPT.out.out1
+        CUTADAPT.out.trimmed,
+        hisat2_index
+    )
+    
+    GATK_SORTSAM(
+        HISAT2.out.outputAlignments
     )
 
     FEATURECOUNTS(
-        HISAT2.out.outputAlignments
+        GATK_SORTSAM.out.sortedAlignments,
+        reference_gtf
     )
 
     PICARD_MARKDUPLICATES(
-        HISAT2.out.outputAlignments
+        GATK_SORTSAM.out.sortedAlignments
     )
 
     SAMTOOLS_IDXSTATS(
-        HISAT2.out.outputAlignments
+        GATK_SORTSAM.out.sortedAlignments
     )
 
     RSEQC_GENEBODY_COVERAGE(
-        ch_in_input_reference_gene_bed,
-        HISAT2.out.outputAlignments
+        GATK_SORTSAM.out.sortedAlignments,
+        reference_bed
     )
 
     RSEQC_INFER_EXPERIMENT(
-        HISAT2.out.outputAlignments,
-        ch_in_input_reference_gene_bed
+        GATK_SORTSAM.out.sortedAlignments,
+        reference_bed
     )
 
     RSEQC_READ_DISTRIBUTION(
-        HISAT2.out.outputAlignments,
-        ch_in_input_reference_gene_bed
-    )
-
-    COLLECTION_COLUMN_JOIN(
-        FEATURECOUNTS.out.outputShort
+        GATK_SORTSAM.out.sortedAlignments,
+        reference_bed
     )
 
     MULTIQC(
@@ -79,6 +84,5 @@ workflow {
         FEATURECOUNTS.out.outputSummary,
         HISAT2.out.outSummaryFile
     )
-
 
 }

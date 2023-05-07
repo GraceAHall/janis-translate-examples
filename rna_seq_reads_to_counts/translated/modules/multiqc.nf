@@ -6,23 +6,23 @@ process MULTIQC {
     publishDir "${params.outdir}/multiqc"
 
     input:
-    path unknown1
-    path unknown2
-    path unknown3
-    path unknown4
-    path unknown5
-    path unknown6
-    path unknown7
-    path unknown8
-    path unknown9
+    path fastqc_report
+    path cutadapt_report
+    path rseqc_infer_experiment_report
+    path picard_markduplicates_report
+    path samtools_idxstats_report
+    path rseqc_genebody_coverage_report
+    path rseqc_read_distribution_report
+    path featurecounts_report
+    path hisat2_report
 
     output:
     path "report.html", emit: outHtmlReport
-    path "report_data/multiqc_.+\.txt", emit: outStats
+    path "report_data/multiqc_*.txt", emit: outStats
 
     script:
     """
-    multiqc multiqc_WDir \
+    multiqc . \
     --filename "report" \
     --title "Tutorial" \
     """

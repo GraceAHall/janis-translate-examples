@@ -1,7 +1,6 @@
 nextflow.enable.dsl=2
 
 process RSEQC_INFER_EXPERIMENT {
-    debug true
     container "quay.io/biocontainers/rseqc:2.6.4--py27hf8a1672_2"
     publishDir "${params.outdir}/rseqc_infer_experiment"
 
@@ -10,9 +9,11 @@ process RSEQC_INFER_EXPERIMENT {
     path option_r
 
     output:
-    stdout, emit: outputFile
+    path "output", emit: outputFile
 
     script:
+    println option_i
+    println option_r
     """
     infer_experiment.py \
     -i ${option_i} \

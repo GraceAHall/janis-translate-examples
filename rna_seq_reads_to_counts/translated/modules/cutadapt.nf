@@ -6,28 +6,27 @@ process CUTADAPT {
     publishDir "${params.outdir}/cutadapt"
 
     input:
-    path unknown1
+    path fastq
 
     output:
-    path "out1*", emit: out1
-    path "report.txt", emit: outReport
+    path "trimmed_${fastq}", emit: trimmed
+    path "${fastq}_report.txt", emit: outReport
 
     script:
-    def unknown1_joined = unknown1.join(' ')
     """
     cutadapt \
+    -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC \
     --error-rate 0.1 \
-    --length 0 \
-    --maximum-length 0 \
-    --minimum-length 0 \
+    --minimum-length 20 \
     --nextseq-trim 0 \
     --overlap 3 \
-    --pair-filter "any" \
-    --quality-cutoff "0" \
+    --quality-cutoff 0 \
     --times 1 \
-    -U 0 \
     -j 1 \
     -u 0 \
+    --output trimmed_${fastq} \
+    ${fastq} \
+    > ${fastq}_report.txt
     """
 
 }

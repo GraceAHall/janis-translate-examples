@@ -10,13 +10,15 @@ process MERGECOLS1 {
     path input1
 
     output:
-    path None, emit: outFile12
+    path "${input1.simpleName}_merged.txt", emit: outFile12
 
     script:
     def out_file11 = null
     """
-    mergeCols.py \
+    python \
+    ${script} \
     ${input1} \
+    ${input1.simpleName}_merged.txt \
     3 \
     4 \
     """

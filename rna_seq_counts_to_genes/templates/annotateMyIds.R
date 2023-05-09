@@ -1,4 +1,9 @@
 
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager", repos="http://cran.us.r-project.org")
+
+BiocManager::install("org.Mm.eg.db")
+
 args <- commandArgs(trailingOnly=TRUE)
 
 options( show.error.messages=F, error = function () { cat( geterrmessage(), file=stderr() ); q( "no", 1, F ) } )

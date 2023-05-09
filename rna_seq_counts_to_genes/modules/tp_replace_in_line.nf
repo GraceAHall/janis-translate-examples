@@ -9,12 +9,15 @@ process TP_REPLACE_IN_LINE {
     path infile
 
     output:
-    stdout, emit: outfile
+    path "${infile.simpleName}_replaced.txt", emit: outfile
 
     script:
     """
     sed \
+    -e \
+    "" \
     ${infile} \
+    > ${infile.simpleName}_replaced.txt
     """
 
 }

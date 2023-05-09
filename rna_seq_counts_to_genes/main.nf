@@ -19,7 +19,9 @@ ch_annotate_my_ids_script  = Channel.fromPath( params.annotate_my_ids_script )
 workflow {
 
     TP_CUT_TOOL1(
-        ch_in_seqdata
+        ch_in_seqdata,
+        [2],
+        true
     )
 
     MERGECOLS1(
@@ -32,7 +34,9 @@ workflow {
     )
 
     TP_CUT_TOOL2(
-        MERGECOLS1.out.outFile12
+        MERGECOLS1.out.outFile12,
+        [2,5],
+        false
     )
 
     ANNOTATEMYIDS(

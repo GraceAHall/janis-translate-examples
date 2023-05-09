@@ -7,16 +7,21 @@ process TP_CUT_TOOL {
 
     input:
     path input_file
+    val fields
+    val complement
 
     output:
-    stdout, emit: outputFile
+    path "${input_file.simpleName}_cut.txt", emit: outputFile
 
     script:
+    def fields = fields.join(",")
+    def complement = complement ? "--complement" : ""
     """
     cut \
-    -f 2 \
-    --complement \
+    -f ${fields} \
+    ${complement} \
     ${input_file} \
+    > ${input_file.simpleName}_cut.txt
     """
 
 }

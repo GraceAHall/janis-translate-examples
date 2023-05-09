@@ -7,7 +7,7 @@ process ANNOTATEMYIDS {
 
     input:
     path script
-    path unknown1
+    path infile
 
     output:
     path "*.tab", emit: outTab
@@ -15,6 +15,9 @@ process ANNOTATEMYIDS {
     script:
     """
     Rscript \
+    ${script} \
+    ${infile} \
+    ${infile.simpleName}_annot.tab
     """
 
 }

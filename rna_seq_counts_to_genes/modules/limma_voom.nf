@@ -12,9 +12,8 @@ process LIMMA_VOOM {
     path option_m
 
     output:
-    path "libsizeinfo", emit: outLibinfo
-    path None, emit: outreport
-    path "output_dir/.+\.tsv$", emit: outtables
+    path "report.html", emit: outreport
+    path "report/*.tsv", emit: outtables
 
     script:
     def option_r = null
@@ -27,14 +26,15 @@ process LIMMA_VOOM {
     -G 10 \
     -c 0.5 \
     -d "BH" \
-    -j "" \
     -l 0.58 \
     -n "TMM" \
     -p 0.01 \
     -s 2 \
     -t 3 \
     -z 0 \
-    "d" \
+    -C basalpregnant-basallactate \
+    -R report.html \
+    -o report \
     """
 
 }

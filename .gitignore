@@ -3,3 +3,6 @@ work/
 .nextflow
 .nextflow.log*
 outputs/
+temp1/
+temp2/
+test.R

@@ -17,9 +17,7 @@ process HISAT2 {
     def index_basename = index[0].simpleName
     """
     hisat2 \
-    --seed 0 \
     --summary-file "${reads.simpleName}_summary.txt" \
-    -p 1 \
     -x ${index_basename} \
     -U ${reads} \
     -S ${reads.simpleName}.sam \

@@ -6,10 +6,10 @@ process LIMMA_VOOM {
     publishDir "${params.outdir}/limma_voom"
 
     input:
+    path script
     path option_a
     path option_f
     path option_m
-    path script
 
     output:
     path "libsizeinfo", emit: outLibinfo

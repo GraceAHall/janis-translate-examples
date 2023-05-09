@@ -6,6 +6,7 @@ process ANNOTATEMYIDS {
     publishDir "${params.outdir}/annotatemyids"
 
     input:
+    path script
     path unknown1
 
     output:

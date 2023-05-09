@@ -6,6 +6,7 @@ process MERGECOLS1 {
     publishDir "${params.outdir}/mergecols1"
 
     input:
+    path script
     path input1
 
     output:

@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 process FGSEA {
     
-    container "quay.io/biocontainers/bioconductor-fgsea:1.8.0--r351hf484d3e_0"
+    container "quay.io/biocontainers/janis-translate-fgsea-1.24.0"
     publishDir "${params.outdir}/fgsea"
 
     input:
@@ -12,15 +12,15 @@ process FGSEA {
 
     output:
     path "fgsea_plots.pdf", emit: outPdf
-    path None, emit: outTab2
+    path "${rnk_file.simpleName}_fgsea.txt", emit: outTab2
 
     script:
-    def out_tab1 = null
     """
     Rscript \
     ${script} \
     --rnk_file ${rnk_file} \
     --sets_file ${sets_file} \
+    --out_tab ${rnk_file.simpleName}_fgsea.txt \
     --gmt "false" \
     --header "true" \
     --max_size 500 \

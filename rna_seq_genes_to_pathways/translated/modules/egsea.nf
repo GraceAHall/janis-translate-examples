@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 process EGSEA {
     
-    container "quay.io/biocontainers/bioconductor-egsea:1.20.0--r41hdfd78af_0"
+    container "quay.io/biocontainers/janis-translate-egsea-1.26.0"
     publishDir "${params.outdir}/egsea"
 
     input:
@@ -12,8 +12,8 @@ process EGSEA {
     path script
 
     output:
-    path "unknown", emit: outreport
-    path "report_dir/ranked-gene-sets-base/.+\.txt$", emit: outtables
+    path "report_dir", emit: outreport
+    path "report_dir/ranked-gene-sets-base/*.txt", emit: outtables
 
     script:
     """
@@ -22,11 +22,11 @@ process EGSEA {
     --factFile ${factfile} \
     --genes ${genes} \
     --matrixPath ${matrixpath} \
+    --contrastData "basalpregnant-basallactate" \
     --base_methods "camera" \
     --combine_method "wilkinson" \
     --display_top 5 \
     --fdr_cutoff 0.05 \
-    --filesPath "" \
     --gsdb "gsdbpath" \
     --keggdb "keggmet" \
     --keggupdated "false" \

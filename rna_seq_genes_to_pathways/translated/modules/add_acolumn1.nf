@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 process ADD_ACOLUMN1 {
     
-    container "quay.io/biocontainers/numpy:1.13.3"
+    container "python:3.7.16"
     publishDir "${params.outdir}/add_acolumn1"
 
     input:
@@ -10,14 +10,18 @@ process ADD_ACOLUMN1 {
     path script
 
     output:
-    path None, emit: outFile12
+    path "${input_file.simpleName}_extracol.txt", emit: outFile12
 
     script:
-    def out_file11 = null
     """
+    pip install numpy
     python \
     ${script} \
     ${input_file} \
+    ${input_file.simpleName}_extracol.txt \
+    "bool(c8<0.01) and bool(abs(c4)>0.58)" \
+    9 \
+    "int,str,str,float,float,float,float,float,float" \
     """
 
 }

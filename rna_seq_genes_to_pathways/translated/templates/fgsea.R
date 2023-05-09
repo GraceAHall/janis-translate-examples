@@ -10,17 +10,17 @@ suppressPackageStartupMessages({
 })
 
 option_list <- list(
-  make_option(c("-rnk_file", "--rnk_file"), type="character", help="Path to ranked genes file"),
-  make_option(c("-header", "--header"), type="logical", help = "Does ranked genes file have a header"),
-  make_option(c("-sets_file", "--sets_file"), type="character", help = "Path to gene sets file"),
-  make_option(c("-gmt", "--gmt"), type="logical", help = "Is the sets file in GMT format"),
-  make_option(c("-out_tab","--out_tab"), type="character", help="Path to output file"),
-  make_option(c("-min_size", "--min_size"), type="integer", help="Minimal size of a gene set to test. All pathways below the threshold are excluded."),
-  make_option(c("-max_size", "--max_size"), type="integer", help="Maximal size of a gene set to test. All pathways above the threshold are excluded."),
-  make_option(c("-n_perm", "--n_perm"), type="integer", help="Number of permutations to do. Minimial possible nominal p-value is about 1/nperm"),
-  make_option(c("-rda_opt", "--rda_opt"), type="logical", help="Output RData file"),
-  make_option(c("-plot_opt", "--plot_opt"), type="logical", help="Output plot"),
-  make_option(c("-top_num", "--top_num"), type="integer", help="Top number of pathways to plot")
+  make_option(c("-r", "--rnk_file"), type="character", help="Path to ranked genes file"),
+  make_option(c("-e", "--header"), type="logical", help = "Does ranked genes file have a header"),
+  make_option(c("-s", "--sets_file"), type="character", help = "Path to gene sets file"),
+  make_option(c("-g", "--gmt"), type="logical", help = "Is the sets file in GMT format"),
+  make_option(c("-o","--out_tab"), type="character", help="Path to output file"),
+  make_option(c("-m", "--min_size"), type="integer", help="Minimal size of a gene set to test. All pathways below the threshold are excluded."),
+  make_option(c("-x", "--max_size"), type="integer", help="Maximal size of a gene set to test. All pathways above the threshold are excluded."),
+  make_option(c("-n", "--n_perm"), type="integer", help="Number of permutations to do. Minimial possible nominal p-value is about 1/nperm"),
+  make_option(c("-d", "--rda_opt"), type="logical", help="Output RData file"),
+  make_option(c("-p", "--plot_opt"), type="logical", help="Output plot"),
+  make_option(c("-t", "--top_num"), type="integer", help="Top number of pathways to plot")
 )
 
 parser <- OptionParser(usage = "%prog [options] file", option_list=option_list)

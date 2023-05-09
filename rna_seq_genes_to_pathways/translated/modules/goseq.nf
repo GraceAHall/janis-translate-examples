@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 process GOSEQ {
     
-    container "quay.io/biocontainers/bioconductor-goseq:1.44.0--r41hdfd78af_0"
+    container "quay.io/biocontainers/janis-translate-goseq-1.44.0"
     publishDir "${params.outdir}/goseq"
 
     input:
@@ -11,12 +11,10 @@ process GOSEQ {
     path script
 
     output:
-    path None, emit: outTopPlot
-    path None, emit: outWalleniusTab
+    path "${dge_file.simpleName}_top_plot.pdf", emit: outTopPlot
+    path "${dge_file.simpleName}_wallenius.txt", emit: outWalleniusTab
 
     script:
-    def wallenius_tab = null
-    def top_plot = null
     """
     Rscript \
     ${script} \
@@ -24,11 +22,12 @@ process GOSEQ {
     --length_file ${length_file} \
     --p_adj_method "BH" \
     --repcnt 0 \
-    --use_genes_without_cat "false" \
-    GO:"GO:CC" \
-    "hg38" \
-    "ensGene" \
-    "GO:CC" \
+    --use_genes_without_cat FALSE \
+    --genome "mm10" \
+    --gene_id "knownGene" \
+    --fetch_cats "GO:CC" \
+    --top_plot ${dge_file.simpleName}_top_plot.pdf \
+    --wallenius_tab ${dge_file.simpleName}_wallenius.txt \
     """
 
 }

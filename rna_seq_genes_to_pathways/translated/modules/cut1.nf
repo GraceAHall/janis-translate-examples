@@ -8,18 +8,20 @@ process CUT1 {
     input:
     path input_file
     path script
+    val columns
+    val suffix
 
     output:
-    path None, emit: outFile12
+    path "${input_file.simpleName}_cut_${suffix}.txt", emit: outFile12
 
     script:
-    def out_file11 = null
     """
     perl \
     ${script} \
     ${input_file} \
-    "c1,c6" \
+    "${columns}" \
     "T" \
+    ${input_file.simpleName}_cut_${suffix}.txt \
     """
 
 }

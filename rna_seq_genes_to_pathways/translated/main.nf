@@ -15,9 +15,7 @@ include { GOSEQ } from './modules/goseq'
 
 // data which will be passed as channels
 ch_add_acolumn1_script       = Channel.fromPath( params.add_acolumn1_script )
-ch_cut11_script              = Channel.fromPath( params.cut11_script )
-ch_cut12_script              = Channel.fromPath( params.cut12_script )
-ch_cut13_script              = Channel.fromPath( params.cut13_script )
+ch_cut1_script               = Channel.fromPath( params.cut1_script )
 ch_egsea_script              = Channel.fromPath( params.egsea_script )
 ch_fgsea_script              = Channel.fromPath( params.fgsea_script )
 ch_goseq_script              = Channel.fromPath( params.goseq_script )
@@ -38,15 +36,23 @@ workflow {
 
     CUT11(
         ch_in_de_table.flatten(),
-        ch_cut11_script
+        ch_cut1_script,
+        "c1,c6",
+        '1'
     )
 
     TP_CUT_TOOL1(
-        ch_in_limma_filtered_counts
+        ch_in_limma_filtered_counts,
+        '2,3',
+        true,
+        'matrixpath'
     )
 
     TP_CUT_TOOL2(
-        ch_in_limma_filtered_counts
+        ch_in_limma_filtered_counts,
+        '1,2',
+        false,
+        'genes'
     )
 
     JOIN1(
@@ -68,12 +74,16 @@ workflow {
 
     CUT12(
         JOIN1.out.outFile12,
-        ch_cut12_script
+        ch_cut1_script,
+        "c1,c10",
+        '2'
     )
 
     CUT13(
         JOIN1.out.outFile12,
-        ch_cut13_script
+        ch_cut1_script,
+        "c1,c12",
+        '3'
     )
 
     FGSEA(

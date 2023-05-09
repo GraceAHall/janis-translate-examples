@@ -9,13 +9,19 @@ process TP_SORT_HEADER_TOOL {
     path infile
 
     output:
-    stdout, emit: outfile
+    path "${infile.simpleName}_sorted.txt", emit: outfile
 
     script:
     """
+    head -n1 ${infile} > ${infile.simpleName}_sorted.txt
+    tail -n+2 ${infile} > data.txt
     sort \
-    -t "" \
-    ${infile} \
+    -t '\t' \
+    -k 2,2 \
+    -n \
+    -r \
+    data.txt \
+    >> ${infile.simpleName}_sorted.txt
     """
 
 }

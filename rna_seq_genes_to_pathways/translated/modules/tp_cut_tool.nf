@@ -7,16 +7,21 @@ process TP_CUT_TOOL {
 
     input:
     path input_file
+    val fields
+    val complement
+    val output_suffix
 
     output:
-    stdout, emit: outputFile
+    path "${input_file.simpleName}_${output_suffix}.txt", emit: outputFile
 
     script:
+    def complement = complement ? "--complement" : ""
     """
     cut \
-    "" \
-    --complement \
+    -f ${fields} \
+    ${complement} \
     ${input_file} \
+    > ${input_file.simpleName}_${output_suffix}.txt
     """
 
 }

@@ -1,0 +1,6 @@
+
+
+Process `EGSEA` input file name collision -- There are multiple input files for each of the following file names: limma-voom_filtered_counts_cut.txt
+    - added "val output_suffix" to tp_cut_tool.nf and used in collection 
+    - added input value for output_suffix in main.nf task calls 
+

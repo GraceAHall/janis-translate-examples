@@ -11,10 +11,9 @@ process JOIN1 {
     path script
 
     output:
-    path None, emit: outFile12
+    path "${input1.simpleName}_joined.txt", emit: outFile12
 
     script:
-    def out_file11 = null
     """
     python \
     ${script} \
@@ -22,6 +21,7 @@ process JOIN1 {
     ${input2} \
     1 \
     1 \
+    ${input1.simpleName}_joined.txt \
     --buffer=50000000 \
     --index_depth=3 \
     """

@@ -4,3 +4,4 @@ work/
 .nextflow.log*
 test.R
 outputs/
+analysis-workflows/

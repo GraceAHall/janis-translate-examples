@@ -1,5 +1,26 @@
 nextflow.enable.dsl=2
 
+ch_bam = Channel.fromPath( params.bam ).toList()
+ch_dbsnp = Channel.fromPath( params.dbsnp ).toList()
+ch_reference = Channel.fromPath( params.reference ).toList()
+
+workflow {
+
+    GATK_HAPLOTYPE_CALLER(
+        ch_bam,    // bam
+        ch_dbsnp,    // dbsnp_vcf
+        ch_reference,    // reference
+        params.gvcf_gq_bands,   // gvcf_gq_bands
+        params.intervals,        // intervals
+        params.emit_reference_confidence,          // emit_reference_confidence
+        params.contamination_fraction,    // contamination_fraction
+        params.max_alternate_alleles,    // max_alternate_alleles
+        params.ploidy,    // ploidy
+        params.read_filter,    // read_filter
+    )
+
+}
+
 process GATK_HAPLOTYPE_CALLER {
     
     container "broadinstitute/gatk:4.1.8.1"
@@ -21,7 +42,7 @@ process GATK_HAPLOTYPE_CALLER {
     tuple path("output.g.vcf.gz"), path("*.tbi"), emit: gvcf
 
     script:
-    def gvcf_gq_bands_joined = gvcf_gq_bands.join(' ')
+    def gvcf_gq_bands_joined = gvcf_gq_bands != params.NULL ? "-GQB " + gvcf_gq_bands.join(' ') : ""
     def intervals_joined = intervals.join(' ')
     def contamination_fraction = contamination_fraction != params.NULL ? "-contamination ${contamination_fraction}" : ""
     def max_alternate_alleles = max_alternate_alleles != params.NULL ? "--max_alternate_alleles ${max_alternate_alleles}" : ""
@@ -32,7 +53,7 @@ process GATK_HAPLOTYPE_CALLER {
     -R ${reference} \
     -I ${bam} \
     -ERC ${emit_reference_confidence} \
-    -GQB ${gvcf_gq_bands_joined} \
+    ${gvcf_gq_bands_joined} \
     -L ${intervals_joined} \
     --dbsnp ${dbsnp_vcf} \
     ${contamination_fraction} \

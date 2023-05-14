@@ -9,6 +9,7 @@ process MARK_DUPLICATES_AND_SORT {
 
     input:
     path bam
+    path script
 
     output:
     path "${bam.simpleName}.mark_dups_metrics.txt", emit: metrics_file
@@ -16,12 +17,11 @@ process MARK_DUPLICATES_AND_SORT {
 
     script:
     """
-    /bin/bash markduplicates_helper.sh \
+    /bin/bash ${script} \
     ${bam} \
     8 \
-    "final.bam" \
+    final.bam \
     ${bam.simpleName}.mark_dups_metrics.txt \
-    "queryname" \
+    queryname \
     """
-
 }

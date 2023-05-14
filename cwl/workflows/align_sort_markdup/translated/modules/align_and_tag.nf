@@ -10,18 +10,19 @@ process ALIGN_AND_TAG {
     input:
     tuple path(reference), path(reference_amb), path(reference_ann), path(reference_bwt), path(reference_pac), path(reference_sa)
     path bam
+    val readgroup
 
     output:
-    path "refAlign.bam", emit: aligned_bam
+    path "${bam.simpleName}_refAlign.bam", emit: aligned_bam
 
     script:
     """
     /bin/bash /usr/bin/alignment_helper.sh \
     ${bam} \
-    ${params.align_and_tag.readgroup} \
+    "${readgroup}" \
     ${reference} \
     8 \
-    > refAlign.bam \
+    > ${bam.simpleName}_refAlign.bam \
     """
 
 }

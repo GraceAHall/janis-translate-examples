@@ -12,7 +12,7 @@ process ALIGN_AND_TAG {
     path bam
 
     output:
-    stdout emit: aligned_bam
+    path "refAlign.bam", emit: aligned_bam
 
     script:
     """
@@ -20,7 +20,7 @@ process ALIGN_AND_TAG {
     ${bam} \
     ${params.align_and_tag.readgroup} \
     ${reference} \
-    <js>runtime.cores</js> \
+    8 \
     > refAlign.bam \
     """
 

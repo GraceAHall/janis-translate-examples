@@ -8,13 +8,13 @@ process SAMTOOLS_FLAGSTAT {
     tuple path(bam), path(bam_bai)
 
     output:
-    stdout emit: flagstats
+    path "${bam}.flagstat", emit: flagstats
 
     script:
     """
     /usr/local/bin/samtools flagstat \
     ${bam} \
-    > ${bam.name}.flagstat \
+    > ${bam}.flagstat \
     """
 
 }

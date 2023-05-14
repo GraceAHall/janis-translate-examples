@@ -11,7 +11,7 @@ requirements:
       ramMin: 20000
     - class: DockerRequirement
       dockerPull: "mgibio/alignment_helper-cwl:1.0.0"
-stdout: "refAlign.bam"      # error 
+stdout: "refAlign.bam"      # error  
 arguments:
     - position: 4
       valueFrom: $(runtime.cores)
@@ -33,4 +33,4 @@ inputs:
             position: 3
 outputs:
     aligned_bam:
-            type: stdout    # error
+        type: stdout    # error

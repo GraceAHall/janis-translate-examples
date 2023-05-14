@@ -16,24 +16,24 @@ ch_readgroups  = Channel.of( params.readgroups ).toList()
 workflow {
 
     ALIGN(
-        ch_bams.flatten().first(),
-        ch_reference
+        ch_bams.flatten().first(),  // bam
+        ch_reference                // reference
     )
 
     INDEX_BAM(
-        MARK_DUPLICATES_AND_SORT.out.sorted_bam.map{ tuple -> tuple[0] }
+        MARK_DUPLICATES_AND_SORT.out.sorted_bam.map{ tuple -> tuple[0] }  // bam
     )
 
     MARK_DUPLICATES_AND_SORT(
-        NAME_SORT.out.name_sorted_bam
+        NAME_SORT.out.name_sorted_bam  // bam
     )
 
     MERGE(
-        ALIGN.out.tagged_bam.toList()
+        ALIGN.out.tagged_bam.toList()  // bams
     )
 
     NAME_SORT(
-        MERGE.out.merged_bam
+        MERGE.out.merged_bam  // bam
     )
 
 

@@ -11,13 +11,13 @@ process MERGE_BAMS_SAMTOOLS {
     path bams
 
     output:
-    path "{inputs.name}.merged.bam", emit: merged_bam
+    path "${"final.bam"}.merged.bam", emit: merged_bam
 
     script:
     def bams_joined = bams.join(' ')
     """
     /usr/local/bin/samtools merge \
-    -@ <js>runtime.cores</js> \
+    -@ 4 \
     ${"final.bam"}.merged.bam \
     ${bams_joined} \
     """

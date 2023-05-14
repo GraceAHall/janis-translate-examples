@@ -1,10 +1,9 @@
 nextflow.enable.dsl=2
 
-def NULL = 'NULL'
-
 process GATK_HAPLOTYPE_CALLER {
     
     container "broadinstitute/gatk:4.1.8.1"
+    publishDir "/home/grace/work/pp/translation/examples/cwl/tools/gatk_haplotype_caller/outputs"
 
     input:
     tuple path(bam), path(bam_bai)
@@ -19,7 +18,7 @@ process GATK_HAPLOTYPE_CALLER {
     val read_filter
 
     output:
-    tuple path("inputs.output_file_name"), path("*.tbi"), emit: gvcf
+    tuple path("output.g.vcf.gz"), path("*.tbi"), emit: gvcf
 
     script:
     def gvcf_gq_bands_joined = gvcf_gq_bands.join(' ')
@@ -33,8 +32,8 @@ process GATK_HAPLOTYPE_CALLER {
     -R ${reference} \
     -I ${bam} \
     -ERC ${emit_reference_confidence} \
-    ${gvcf_gq_bands_joined} \
-    ${intervals_joined} \
+    -GQB ${gvcf_gq_bands_joined} \
+    -L ${intervals_joined} \
     --dbsnp ${dbsnp_vcf} \
     ${contamination_fraction} \
     ${max_alternate_alleles} \

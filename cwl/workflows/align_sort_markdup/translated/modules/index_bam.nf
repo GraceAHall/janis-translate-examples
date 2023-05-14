@@ -10,17 +10,17 @@ process INDEX_BAM {
     path bam
 
     output:
-    tuple path("inputs.bam.basename"), path("*.bai"), path("*.bai"), emit: indexed_bam
+    tuple path("${bam}"), path("${bam}.bai"), emit: indexed_bam
 
     script:
     """
     /usr/local/bin/samtools \
     index \
-    ${"<js>runtime.outdir)/$(inputs.bam</js>".name} \
-    <js>runtime.outdir</js>/${bam.name}.bai \
+    ${bam} \
+    ${bam}.bai \
     cp \
-    ${bam.name}.bai \
-    <js>runtime.outdir</js>/${${bam}.baseName}.bai \
+    ${bam}.bai \
+    ${bam.simpleName}.bai \
     """
 
 }

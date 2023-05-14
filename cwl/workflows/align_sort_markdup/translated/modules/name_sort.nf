@@ -11,7 +11,7 @@ process NAME_SORT {
     path bam
 
     output:
-    path "{inputs.bam.nameroot}.NameSorted.bam", emit: name_sorted_bam
+    path "${bam.simpleName}.NameSorted.bam", emit: name_sorted_bam
 
     script:
     """

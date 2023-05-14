@@ -11,16 +11,16 @@ process MARK_DUPLICATES_AND_SORT {
     path bam
 
     output:
-    path "{inputs.bam.nameroot}.mark_dups_metrics.txt", emit: metrics_file
-    tuple path("inputs.output_name"), path("*.bai"), emit: sorted_bam
+    path "${bam.simpleName}.mark_dups_metrics.txt", emit: metrics_file
+    tuple path("final.bam"), path("*.bai"), emit: sorted_bam
 
     script:
     """
     /bin/bash markduplicates_helper.sh \
     ${bam} \
-    <js>runtime.cores</js> \
+    8 \
     "final.bam" \
-    ${${bam}.baseName}.mark_dups_metrics.txt \
+    ${bam.simpleName}.mark_dups_metrics.txt \
     "queryname" \
     """
 

@@ -1,7 +1,7 @@
 
 
 
-# Samtools Flagstat Translation
+# GATK HaplotypeCaller Translation
 
 ## Introduction
 

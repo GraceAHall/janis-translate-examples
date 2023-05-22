@@ -32,20 +32,14 @@ inputs:
             prefix: "-ERC"
             position: 3
     gvcf_gq_bands:
-        type:
-            type: array
-            items: string
-            inputBinding:
-                prefix: "-GQB"
+        type: string[]?
         inputBinding:
+            prefix: "-GQB"
             position: 4
     intervals:   
-        type:
-            type: array
-            items: string
-            inputBinding:
-                prefix: "-L"
+        type: string[]
         inputBinding:
+            prefix: "-L"
             position: 5
     dbsnp_vcf:
         type: File?             # error

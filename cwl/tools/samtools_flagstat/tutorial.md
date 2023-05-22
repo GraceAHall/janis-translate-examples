@@ -28,7 +28,6 @@ To begin, make sure you have [nextflow](https://nf-co.re/usage/installation), [d
 
 To translate a workflow,  we use `janis translate`.
 
-
 ```
 janis translate --from <src> --to <dest> <filepath>
 ```
@@ -37,10 +36,23 @@ The `--from` specifies the workflow language of the source file(s), and `--to` s
 
 In our case, we want to translate CWL -> Nextflow, and our source CWL file is located at `source/samtools_flagstat.cwl` relative to this document.
 
-Therefore to translate `samtools_flagstat.cwl` to nextflow, we can write the following in a shell:
+<br>
+
+*using pip*
+
+To translate `samtools_flagstat.cwl` to nextflow, we can write the following in a shell:
 ```
 janis translate --from cwl --to nextflow ./source/samtools_flagstat.cwl
 ```
+
+*using docker (linux bash)*
+
+If the janis translate docker container is being used, we can write the following:
+```
+docker run -v $(pwd):/home janis translate --from cwl --to nextflow ./source/samtools_flagstat.cwl
+```
+
+<br>
 
 You will see a folder called `translated` appear, and a nextflow process called `samtools_flagstat.nf` will be present inside. 
 
@@ -56,15 +68,15 @@ nextflow.enable.dsl=2
 process SAMTOOLS_FLAGSTAT {
     
     container "quay.io/biocontainers/samtools:1.11--h6270b1f_0"
-    publishDir "./outputs"
 
     input:
-    tuple path(bam), path(bam_bai)
+    path bam
 
     output:
-    path "${bam}.flagstat", emit: flagstats
+    path "${bam[0]}.flagstat", emit: flagstats
 
     script:
+    def bam = bam[0]
     """
     /usr/local/bin/samtools flagstat \
     ${bam} \
@@ -167,6 +179,10 @@ In our case, the workflow only contains a single task, which runs the `SAMTOOLS_
 **Running Our Workflow**
 
 Ensure you are in the `translated/` working directory, where `nextflow.config` and `samtools_flagstat.nf` reside. 
+
+```
+cd translated/
+```
 
 To run the workflow using our sample data, we can now write the following command: 
 ```

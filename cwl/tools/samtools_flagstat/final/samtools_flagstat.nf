@@ -12,12 +12,13 @@ process SAMTOOLS_FLAGSTAT {
     publishDir "./outputs"
 
     input:
-    tuple path(bam), path(bam_bai)
+    path bam
 
     output:
-    path "${bam}.flagstat", emit: flagstats
+    path "${bam[0]}.flagstat", emit: flagstats
 
     script:
+    def bam = bam[0]
     """
     /usr/local/bin/samtools flagstat \
     ${bam} \

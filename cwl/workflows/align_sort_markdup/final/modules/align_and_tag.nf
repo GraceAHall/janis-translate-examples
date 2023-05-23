@@ -8,19 +8,23 @@ process ALIGN_AND_TAG {
     memory "${params.align_and_tag.memory}"
 
     input:
-    tuple path(reference), path(reference_amb), path(reference_ann), path(reference_bwt), path(reference_pac), path(reference_sa)
+    path reference
     path bam
     val readgroup
+    val dummy
 
     output:
     path "${bam.simpleName}_refAlign.bam", emit: aligned_bam
 
     script:
+    def reference = reference[0]
+    def dummy = dummy != params.NULL_VALUE ? dummy : ""
     """
     /bin/bash /usr/bin/alignment_helper.sh \
     ${bam} \
     "${readgroup}" \
     ${reference} \
+    ${dummy} \
     8 \
     > ${bam.simpleName}_refAlign.bam \
     """

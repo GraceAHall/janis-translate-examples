@@ -18,6 +18,7 @@ process INDEX_BAM {
     index \
     ${bam} \
     ${bam}.bai \
+     &&  \
     cp \
     ${bam}.bai \
     ${bam.simpleName}.bai \

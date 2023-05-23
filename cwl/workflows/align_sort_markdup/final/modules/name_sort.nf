@@ -16,13 +16,14 @@ process NAME_SORT {
     script:
     """
     /usr/bin/sambamba sort \
-    ${bam} \
-    -t 4 \
+    -t \
+    8 \
     -m \
     22G \
     -n \
     -o \
     ${bam.simpleName}.NameSorted.bam \
+    ${bam} \
     """
 
 }

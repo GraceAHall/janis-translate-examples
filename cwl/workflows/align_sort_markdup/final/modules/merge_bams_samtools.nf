@@ -9,16 +9,17 @@ process MERGE_BAMS_SAMTOOLS {
 
     input:
     path bams
+    val name
 
     output:
-    path "${"final.bam"}.merged.bam", emit: merged_bam
+    path "${name}.merged.bam", emit: merged_bam
 
     script:
     def bams_joined = bams.join(' ')
     """
     /usr/local/bin/samtools merge \
     -@ 4 \
-    ${"final.bam"}.merged.bam \
+    ${name}.merged.bam \
     ${bams_joined} \
     """
 

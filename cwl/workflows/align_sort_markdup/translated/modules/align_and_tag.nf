@@ -11,20 +11,17 @@ process ALIGN_AND_TAG {
     path reference
     path bam
     val readgroup
-    val dummy
 
     output:
     path "refAlign.bam", emit: aligned_bam
 
     script:
     def reference = reference[0]
-    def dummy = dummy != params.NULL_VALUE ? dummy : ""
     """
     /bin/bash /usr/bin/alignment_helper.sh \
     ${bam} \
     ${readgroup} \
     ${reference} \
-    ${dummy} \
     8 \
     > refAlign.bam \
     """

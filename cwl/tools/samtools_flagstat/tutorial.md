@@ -1,11 +1,22 @@
 
 
 
-# Samtools Flagstat Translation
+# Samtools Flagstat Tool Translation
 
 ## Introduction
 
 This tutorial demonstrates translation of a basic `samtools flagstat` tool from CWL to Nextflow using `janis translate`. <br>
+
+**Source Tool**
+
+The CWL tool used in this tutorial is taken from the [McDonnell Genome Institute](https://www.genome.wustl.edu/) (MGI) [analysis-workflows](https://github.com/genome/analysis-workflows) repository. 
+
+This resource stores publically available analysis pipelines for genomics data. <br>
+It is a fantastic piece of research software, and the authors thank MGI for their contribution to open-source research software. 
+
+The tool using in this tutorial - [samtools_flagstat](https://github.com/genome/analysis-workflows/blob/master/definitions/tools/samtools_flagstat.cwl) - displays summary information for an alignment file. 
+
+**Tutorial Outcomes**
 
 In this tutorial we will:
 - Install the required software
@@ -17,10 +28,10 @@ After completing this short tutorial, you will be familiar with using `janis tra
 
 Other tutorials exist to demonstrate migration from WDL / CWL / Galaxy -> Nextflow in this repository, including full workflow migrations with multiple tasks. 
 
-<br>
+**Installation**
 
-## Installation 
-To begin, make sure you have [nextflow](https://nf-co.re/usage/installation), [docker](https://docs.docker.com/engine/install/), and [janis translate](https://janis.readthedocs.io/en/latest/index.html) installed. 
+To begin, make sure you have [nextflow](https://nf-co.re/usage/installation), [docker](https://docs.docker.com/engine/install/), and [janis translate](https://janis.readthedocs.io/en/latest/index.html) installed. <br>
+The links above contain installation instructions. 
 
 <br>
 

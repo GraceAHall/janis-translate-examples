@@ -372,12 +372,34 @@ This is the first of ***3*** errors we will encounter and fix while making this 
 Translations performed by `janis translate` often require manual changes due to the difficulty of translating between languages with non-overlapping feature sets. 
 
 
-Once completed, we can check the `./outputs` folder to view our results. <br>
-If everything went well, the `./outputs` folder should contain 2 files: 
-- `output.g.vcf.gz`
-- `output.g.vcf.gz.tbi`.
 
-If needed, you can check the `./final` folder which contains the files we created in this tutorial as reference.  
+
+
+
+
+Once completed, we can check the `./outputs` folder to view our results. <br>
+If everything went well, the `./outputs` folder should have the following structure:
+```
+outputs
+├── align_and_tag
+│   ├── 2895499223_refAlign.bam
+│   └── 2895499237_refAlign.bam
+├── index_bam
+│   ├── final.bam
+│   └── final.bam.bai
+├── mark_duplicates_and_sort
+│   ├── final.bam
+│   ├── final.bam.bai
+│   └── final.mark_dups_metrics.txt
+├── merge_bams_samtools
+│   └── final.bam.merged.bam
+└── name_sort
+    └── final.NameSorted.bam
+```
+
+
+
+For further information, the finished workflow can be seen in the `./final` folder. 
 
 <br>
 

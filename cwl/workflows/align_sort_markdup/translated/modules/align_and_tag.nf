@@ -20,7 +20,7 @@ process ALIGN_AND_TAG {
     """
     /bin/bash /usr/bin/alignment_helper.sh \
     ${bam} \
-    ${readgroup} \
+    "${readgroup}" \
     ${reference} \
     8 \
     > refAlign.bam \

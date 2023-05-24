@@ -371,10 +371,339 @@ This is the first of ***3*** errors we will encounter and fix while making this 
 
 Translations performed by `janis translate` often require manual changes due to the difficulty of translating between languages with non-overlapping feature sets. 
 
+In this section we will fix ***3 errors*** to bring the translation to a finished state. 
 
+> NOTE <br>
+> If having trouble during this section, the finished workflow is available in the `./final` folder for reference.
 
+<br>
 
+### Error 1: Task Order
 
+The first issue we need to address is caused by tasks being in the wrong order. 
+
+**Error message:**
+```
+Access to 'MARK_DUPLICATES_AND_SORT.out' is undefined since the process 'MARK_DUPLICATES_AND_SORT' has not been invoked before accessing the output attribute
+```
+
+This nextflow error message is quite informative, and tells us that a task is trying to access the output of `MARK_DUPLICATES_AND_SORT` before it has run. 
+
+The offending task is `INDEX_BAM` as it uses `MARK_DUPLICATES_AND_SORT.out.sorted_bam.map{ tuple -> tuple[0] }` as an input value to the process. 
+
+You may notice here that other tasks are also using input values before they are available. 
+
+In the source CWL `align_sort_markdup.cwl` workflow we can see the correct order:
+
+```
+steps:
+    align:
+        ...
+    merge:
+        ...
+    name_sort:
+        ...
+    mark_duplicates_and_sort:
+        ...
+    index_bam:
+        ...
+
+```
+
+Yet this differs from our translated `main.nf` which has the following order:
+
+```
+workflow {
+
+    ALIGN(
+        ...
+    )
+
+    INDEX_BAM(
+        ...
+    )
+
+    MARK_DUPLICATES_AND_SORT(
+        ...
+    )
+
+    MERGE(
+        ...
+    )
+
+    NAME_SORT(
+        ...
+    )
+
+}
+```
+
+<br>
+
+**Solution**
+
+Rearrange the task calls in `main.nf` so they mirror the order in the source CWL. 
+
+Cut and paste the task calls so that they are in the following order:
+- ALIGN
+- MERGE
+- NAME_SORT
+- MARK_DUPLICATES_AND_SORT
+- INDEX_BAM
+
+After you are done, rerun the workflow by using the same command as before.
+
+```
+nextflow run main.nf
+```
+
+<br>
+
+### Error 2: Unquoted Strings
+
+The second error is due to the `readgroup` input of the `ALIGN_AND_TAG` process being used without enclosing quotes. 
+
+**Error message**
+```
+Caused by:
+Process `ALIGN:ALIGN_AND_TAG (1)` terminated with an error exit status (1)
+
+Command executed:
+/bin/bash /usr/bin/alignment_helper.sh     2895499223.bam     @RG INCLID:2895499223RY_PU:H7HY2CCXX.3.ATCACGGTITY=ISM:H_NJ-HCC1395-HCC1395ILB:H_NJ-HCC1395-HCC1395-lg24-lib1LEVEL=5PL:IlluminaSCN:WUGSC     chr17_test.fa          8     > refAlign.bam
+```
+
+The issue can be seen in the command above. 
+
+We see `/bin/bash /usr/bin/alignment_helper.sh   2895499223.bam` which is expected. <br>
+This is then followed by what looks like 2 string arguments: `@RG` and `INCLID...`.<br>
+This is causing the problem.
+
+<br>
+
+The `Command executed` section in nextflow error messages is particularly useful. <br> 
+This message is printed to the shell, but can also be seen by navigating to the process working directory & viewing `.command.sh`. 
+
+Let's look at the nextflow `ALIGN_AND_TAG` process so we can match up which process input is causing the error. <br>
+Indiviual arguments have been marked with their (position) to aid our investigation. 
+
+```
+process ALIGN_AND_TAG {
+    
+    container "mgibio/alignment_helper-cwl:1.0.0"
+    publishDir "${params.outdir}/align_and_tag"
+    cpus "${params.align_and_tag.cpus}"
+    memory "${params.align_and_tag.memory}"
+
+    input:
+    path reference
+    path bam
+    val readgroup
+
+    output:
+    path "refAlign.bam", emit: aligned_bam
+
+    script:
+    def reference = reference[0]
+    """
+    (1) /bin/bash (2) /usr/bin/alignment_helper.sh \
+    (3) ${bam} \
+    (4) ${readgroup} \
+    (5) ${reference} \
+    (6) 8 \
+    (7) > (8) refAlign.bam \
+    """
+
+}
+```
+
+Here is the command executed with the same numbering:
+
+```
+(1) /bin/bash (2) /usr/bin/alignment_helper.sh  (3) 2895499223.bam     (4) @RG (5) INCLID:2895499223RY_PU:H7HY2CCXX.3.ATCACGGTITY=ISM:H_NJ-HCC1395-HCC1395ILB:H_NJ-HCC1395-HCC1395-lg24-lib1LEVEL=5PL:IlluminaSCN:WUGSC   (6) chr17_test.fa        (7) 8  (8) >  (9) refAlign.bam 
+```
+
+Matching up the two, we can see that arugments `(1-3)` match their expected values. <br>
+Argument `(4)` starts out right, as we expect the `readgroup` input. 
+
+Looking in the `script:` section of the nextflow process, we expect the `${reference}` input to appear as argument `(5)`, but in the actual command it appears as argument `(6)` `chr17_test.fa`.
+
+The issue seems to be that the `readgroup` input has been split into 2 strings, instead of 1 single string. <br>
+By tracing back through the workflow, we can track that `params.readgroups` supplies the value for `readgroup` in this nextflow process:
+
+```
+modules/align_and_tag.nf:  readgroup
+subworkflows/align.nf:     ch_readgroup
+main.nf:                   ch_readgroups.flatten()
+main.nf:                   ch_readgroups  = Channel.of( params.readgroups ).toList()
+```
+
+Looking at `nextflow.config` we see that this particular readgroup value is supplied as follows:
+
+```
+@RG\tID:2895499223\tPU:H7HY2CCXX.3.ATCACGGT\tSM:H_NJ-HCC1395-HCC1395\tLB:H_NJ-HCC1395-HCC1395-lg24-lib1\tPL:Illumina\tCN:WUGSC
+```
+
+The `@RG` being split from the rest of the readgroup value, and the text which follows is incorrect in the command.  
+
+The issue here is that this value in `params.readgroups` contains spaces and tabs (`\t`). <br>
+When used in a nextflow process, string arugments should be enclosed  using `""`. 
+
+<br>
+
+**Solution**
+
+Back in the `modules/align_and_tag.nf` file, let's properly enclose the `readgroup` input in quotes. 
+
+In the `ALIGN_AND_TAG` process script, make the following change: 
+
+```
+    script:
+    def reference = reference[0]
+    """
+    /bin/bash /usr/bin/alignment_helper.sh \
+    ${bam} \
+    "${readgroup}" \              <- quotes added
+    ${reference} \
+    8 \
+    > refAlign.bam \
+    """
+```
+
+After you are have made the change, re-run the workflow by using the same command as before:
+
+```
+nextflow run main.nf
+```
+
+<br>
+
+### Error 3: Filename Clashes
+
+The final error is flagged by the nextflow workflow engine. 
+
+<br>
+
+**Error Message**
+
+Upon re-running the workflow, you will encounter the following message:
+```
+Process `MERGE` input file name collision -- There are multiple input files for each of the following file names: refAlign.bam
+```
+
+This informs us that more than 1 file with the name `refAlign.bam` have been inputs to `MERGE` process. 
+
+Nextflow does not allow this behaviour. <br>
+
+Other workflow engines use temporary names for files so that name clashes are impossible. <br> 
+Nextflow requires us to be more specific with our filenames so we can track which file is which. 
+
+This is not a hard-and-fast rule of workflow engines, but nextflow enforces using unique names to encourage best-practises. 
+
+To track the cause, let's look at the data which feeds the `MERGE` process. 
+
+`main.nf`
+```
+MERGE(
+    ALIGN.out.tagged_bam.toList(),  // bams
+    params.final_name               // name
+)
+```
+
+We can see the translated nextflow workflow is collecting the `tagged_bam` output of all `ALIGN` tasks as a list using `.toList()`. <br>
+This value feeds the `bams` input of the `MERGE` process. 
+
+The issue is that 2+ files in this list must have the same filename: "refAlign.bam".<br>
+We need to see how files end up being placed into `ALIGN.out.tagged_bam` to track where the error is occuring. 
+
+Looking in the `ALIGN` subworkflow in `subworkflows/align.nf`, we see the offending `tagged_bam` output emit. <br>
+This gets its data from the `aligned_bam` output of the `ALIGN_AND_TAG` process in `modules/align_and_tag.nf`. 
+
+The source of the issue must be that the `aligned_bam` output is producing the same filename each time the task is run. 
+
+Opening `modules/align_and_tag.nf` we can see how the `align_bam` output is created & collected:
+```
+    output:
+    path "refAlign.bam", emit: aligned_bam          <-
+
+    script:
+    def reference = reference[0]
+    """
+    /bin/bash /usr/bin/alignment_helper.sh \
+    ${bam} \
+    "${readgroup}" \
+    ${reference} \
+    8 \
+    > refAlign.bam \                                <-
+    """
+```
+
+From looking at the `output` and `script` section of this process, we can see that `aligned_bam` will always have the same name. 
+
+In the script, we create a file called `refAlign.bam` by redirecting `stdout` to this file. <br>
+In the output, `refAlign.bam` is collected as the output. 
+
+This would be fine if our workflow was supplied only a single BAM input file, but we want our workflow to run when we have many BAMs. 
+
+<br>
+
+**Solution**
+
+To fix this issue, we need to give the output files unique names. 
+
+As our input BAM files will all have unique names, we can use this as a base and append `_refAlign.bam` onto the end.  
+
+To access the filename of a `path` input without directory and extension, we can use `.simpleName`. <br>
+For example if we have the following path: `sample_data/alignment.bam`, calling `.simpleName` would yield `alignment`. <br>
+The directory path and the extension have been trimmed out. 
+
+In the `ALIGN_AND_TAG` process in `modules/align_and_tag.nf`, make the following changes:
+
+```
+process ALIGN_AND_TAG {
+    
+    container "mgibio/alignment_helper-cwl:1.0.0"
+    publishDir "${params.outdir}/align_and_tag"
+    cpus "${params.align_and_tag.cpus}"
+    memory "${params.align_and_tag.memory}"
+
+    input:
+    path reference
+    path bam
+    val readgroup
+
+    output:
+    path "${bam.simpleName}_refAlign.bam", emit: aligned_bam    <-
+
+    script:
+    def reference = reference[0]
+    """
+    /bin/bash /usr/bin/alignment_helper.sh \
+    ${bam} \
+    "${readgroup}" \
+    ${reference} \
+    8 \
+    > ${bam.simpleName}_refAlign.bam \                          <-
+    """
+
+}
+```
+
+This will cause an input BAM with the filename `sample1.bam` to be redirected to `sample1_refAlign.bam`, which will be collected by the `aligned_bam` output. 
+
+Notice the use of `.simpleName` to access the file's base name. 
+
+<br>
+
+After you are have made these changes, re-run the workflow by using the same command as before:
+```
+nextflow run main.nf
+```
+
+With any luck, this will fix the remaining issues and the workflow will now run to completion. 
+
+<br>
+
+## Completed Workflow
 
 
 Once completed, we can check the `./outputs` folder to view our results. <br>
@@ -398,13 +727,36 @@ outputs
 ```
 
 
+If having trouble, the finished workflow is also available in the `./final` folder for reference.
 
-For further information, the finished workflow can be seen in the `./final` folder. 
+In addition, the following diffs shows the changes we made to files during manual adjustment of the workflow. 
+
+`main.nf`
+
+![alt text](media/asm_main.PNG)
+
+`align_and_tag.nf`
+
+![alt text](media/asm_align_and_tag.PNG)
+
 
 <br>
 
 ### Conclusion
 
-In this tutorial we explored how to translate the `align_sort_markdup` CWL tool to a Nextflow process. 
+In this tutorial we explored how to translate the `align_sort_markdup` CWL workflow to Nextflow using `janis translate`. 
 
-A tutorial for a CWL workflow translation to Nextflow is available in the `cwl/workflows/align_sort_markdup` folder. 
+For your interest, the following tutorials are also available:
+- Tutorials for single CWL tool translations are available in the `cwl/tools` folder. 
+- Tutorials for Galaxy -> Nextflow tools and workflows are available in the `galaxy` folder at the top level of this repository. 
+
+<br>
+
+Thank you for your time! 
+
+We hope `janis translate` can assist you in your work. 
+
+If you have any bugs or issues you need help with, please raise an issue in the [janis-core github repository](https://github.com/PMCC-BioinformaticsCore/janis-core). <br>
+We look at each issue raised and aim to resolve these if possible. 
+
+

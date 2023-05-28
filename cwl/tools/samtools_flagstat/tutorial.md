@@ -9,12 +9,12 @@ This tutorial demonstrates translation of a basic `samtools flagstat` tool from 
 
 **Source Tool**
 
-The CWL tool used in this tutorial is taken from the [McDonnell Genome Institute](https://www.genome.wustl.edu/) (MGI) [analysis-workflows](https://github.com/genome/analysis-workflows) repository. 
+The CWL tool used in this tutorial - [samtools_flagstat](https://github.com/genome/analysis-workflows/blob/master/definitions/tools/samtools_flagstat.cwl) -  is taken from the [McDonnell Genome Institute](https://www.genome.wustl.edu/) (MGI) [analysis-workflows](https://github.com/genome/analysis-workflows) repository. 
 
 This resource stores publically available analysis pipelines for genomics data. <br>
 It is a fantastic piece of research software, and the authors thank MGI for their contribution to open-source research software. 
 
-The tool using in this tutorial - [samtools_flagstat](https://github.com/genome/analysis-workflows/blob/master/definitions/tools/samtools_flagstat.cwl) - displays summary information for an alignment file. 
+The underlying software run by this tool - [samtools_flagstat](http://www.htslib.org/doc/samtools-flagstat.html) - displays summary information for an alignment file. 
 
 **Tutorial Outcomes**
 

@@ -313,12 +313,7 @@ From reading the documentation, you may have noticed that some arguments aren't 
 We will be using a single input counts file.<br>
 *Remove* this argument. 
 
-*trailing positional*
-
-The final argument has no prefix, and simply has the value `"i"`. <br>
-This is a translation error, as the Rscript doesn't accept any positional arguments. <br>
-*Remove* this argument. 
-
+<br>
 
 **Modifying Outputs**
 
@@ -364,6 +359,7 @@ process LIMMA_VOOM {
     -f ${option_f} \
     -m ${option_m} \
     -G 10 \
+    -P "i" \
     -c 1 \
     -d "BH" \
     -l 0 \
@@ -474,22 +470,33 @@ If needed, you can check the `./final` folder which contains the files we create
 
 `outReport.html` will be a symlink to the work folder where `LIMMA_VOOM` ran.<br> 
 Change to this directory to see the various data and pdfs produced by `LIMMA_VOOM`. <br>
-You should see the following files: 
+You should see the following files & directories: 
 ```
+# directories
+- glimma_MDS
+- glimma_Mut-WT
+- glimma_volcano_Mut-WT
+- glimma_WT-Mut
+- glimma_volcano_WT-Mut
+- glimma_Mut-WT-WT-Mut
+- glimma_volcano_Mut-WT-WT-Mut
+
+# files
+- mdsscree.png
 - mdsscree.pdf
 - saplot.png
 - saplot.pdf
 - limma-trend_Mut-WT.tsv
-- volplot_Mut-WT.pdf
 - mdplot_Mut-WT.pdf
-- volplot_WT-Mut.pdf
+- volplot_Mut-WT.pdf
 - mdvolplot_Mut-WT.png
 - mdplot_WT-Mut.pdf
 - limma-trend_WT-Mut.tsv
-- volplot_Mut-WT-WT-Mut.pdf
+- volplot_WT-Mut.pdf
 - mdvolplot_WT-Mut.png
-- mdplot_Mut-WT-WT-Mut.pdf
 - limma-trend_Mut-WT-WT-Mut.tsv
+- mdplot_Mut-WT-WT-Mut.pdf
+- volplot_Mut-WT-WT-Mut.pdf
 - mdvolplot_Mut-WT-WT-Mut.png
 - session_info.txt
 - outReport.html
@@ -503,9 +510,6 @@ Here is an example of how `outReport.html` should look:
 ![alt text](media/outReport2.PNG)
 ![alt text](media/outReport3.PNG)
 ![alt text](media/outReport4.PNG)
-
-
-
 
 
 <br>

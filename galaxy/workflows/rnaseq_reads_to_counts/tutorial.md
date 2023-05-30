@@ -7,30 +7,20 @@
 
 This tutorial demonstrates translation of a Galaxy workflow to Nextflow using `janis translate`. 
 
+The workflow we will translate in this tutorial accepts raw RNA-seq reads as input, and produces gene counts for further analysis (eg. differential expression).
+
+
 <br>
 
 
 **Source Workflow**
 
-The workflow used in this tutorial is taken from the [McDonnell Genome Institute](https://www.genome.wustl.edu/) (MGI) [analysis-workflows](https://github.com/genome/analysis-workflows) repository. <br>
-This resource stores publically available analysis pipelines for genomics data. <br>
-It is a fantastic piece of research software, and the authors thank MGI for their contribution to open-source research software. 
+The workflow used in this tutorial is taken from the [Galaxy Training Network (GTN)](https://training.galaxyproject.org/training-material/) resource which provides tutorials on how to use Galaxy for bioinformatic analysis. 
 
-The workflow using in this tutorial - [align_sort_markdup](https://github.com/genome/analysis-workflows/blob/master/definitions/subworkflows/align_sort_markdup.cwl) - accepts multiple unaligned readsets as input and produces a single polished alignment bam file. 
+The GTN has over 100 tutorials demonstrating how to use the Galaxy platform to analyse data, and is definitely worth having a look! 
 
-*Main Inputs* 
-- Unaligned reads stored across multiple BAM files
-- Reference genome index
+The specific workflow we use today is from the [RNA-Seq reads to counts](https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-reads-to-counts/tutorial.html) page, which provides detailed instruction on how to turn raw RNA-seq reads into gene counts. <br>
 
-*Main Outputs*
-- Single BAM file storing alignment for all readsets
-
-*Steps*
-- Read alignment (run in parallel across all readsets) - `bwa mem`
-- Merging alignment BAM files to single file - `samtools merge`
-- Sorting merged BAM by coordinate - `sambamba sort`
-- Tagging duplicate reads in alignment - `picard MarkDuplicates` 
-- Indexing final BAM - `samtools index`
 
 <br>
 
@@ -38,13 +28,14 @@ The workflow using in this tutorial - [align_sort_markdup](https://github.com/ge
 
 In this tutorial we will:
 - Install the required software
-- Translate the CWL using `janis translate`
-- Make manual adjustments to the translation if necessary
-- Run the nextflow using sample input data to validate our nextflow code
+- Obtain the Galaxy workflow
+- Translate the Galaxy workflow to Nextflow using `janis translate`
+- Make manual adjustments to the translation where needed
+- Run the Nextflow workflow using sample input data to validate our translation
 
-After completing this short tutorial, you will be familiar with using `janis translate` to migrate workflow tools in CWL to Nextflow.
+After completing this short tutorial, you will be familiar with using `janis translate` to migrate workflows in Galaxy to Nextflow.
 
-Other tutorials exist to demonstrate migration from WDL / CWL / Galaxy -> Nextflow in this repository, including full workflow migrations with multiple tasks. 
+Other tutorials exist to demonstrate migration from WDL / CWL / Galaxy -> Nextflow in this repository.
 
 <br>
 
@@ -57,6 +48,40 @@ The links above contain installation instructions.
 
 ## Janis Translate
 
+**Obtain the Workflow**
+
+Galaxy workflows can be found in a number of places. 
+
+Today, we will use the workflow provided from the GTN RNA-Seq reads to counts tutorial. <br>
+The workflow can be downloaded using [this link](https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-reads-to-counts/workflows/rna-seq-reads-to-counts.ga).
+
+The downloaded `.ga` workflow is also included in the local `source/` folder if needed. 
+
+<br>
+
+*(for your information)*
+
+Galaxy servers each have [shared workflows](https://usegalaxy.org.au/workflows/list_published) where you can search for a community workflow which suits your needs. The link above is to the Galaxy Australia server shared workflows page, which contains hundreds of workflows which users have made public. 
+
+![alt-text](media/galaxy_shared_workflows_download.PNG)
+
+<br>
+
+The [Galaxy Training Network (GTN)](https://training.galaxyproject.org/training-material/) also provides workflows for their training tutorials. These are useful because the topics covered are common analyses users wish to perform. 
+
+![alt-text](media/rnaseq_reads_to_counts_download.PNG)
+
+<br>
+
+Additionally, you can create your own workflow using the [Galaxy Workflow Editor](https://usegalaxy.org.au/workflows/list) then download your creation. 
+
+![alt-text](media/galaxy_workflow_editor_download.PNG)
+
+
+<br>
+
+**Run Janis Translate**
+
 To translate a workflow,  we use `janis translate`.
 
 ```
@@ -65,24 +90,23 @@ janis translate --from <src> --to <dest> <filepath>
 
 The `--from` specifies the workflow language of the source file(s), and `--to` specifies the destination we want to translate to. 
 
+In our case, we want to translate Galaxy -> Nextflo. <br>
+Our source Galaxy file is wherever you downloaded the `.ga` to, or alternatively at `source/rna-seq-reads-to-counts.ga` relative to this document.
+
 <br>
-
-**Run Janis Translate**
-
-In our case, we want to translate CWL -> Nextflow, and our source CWL file is located at `source/subworkflows/align_sort_markdup.cwl` relative to this document.
 
 *using pip*
 
-To translate `align_sort_markdup.cwl` to nextflow, we can write the following in a shell:
+To translate `rna-seq-reads-to-counts.ga` to nextflow, we can write the following in a shell:
 ```
-janis translate --from cwl --to nextflow ./source/subworkflows/align_sort_markdup.cwl
+janis translate --from galaxy --to nextflow source/rna-seq-reads-to-counts.ga
 ```
 
 *using docker (linux bash)*
 
 If the janis translate docker container is being used, we can write the following:
 ```
-docker run -v $(pwd):/home janis translate --from cwl --to nextflow ./source/subworkflows/align_sort_markdup.cwl
+docker run -v $(pwd):/home janis translate --from galaxy --to nextflow source/rna-seq-reads-to-counts.ga
 ```
 
 <br>
@@ -93,18 +117,26 @@ The output translation will contain multiple files and directories.<br>
 You will see a folder called `translated` appear - inside this folder, we should see the following structure:
 
 ```
-├── main.nf                             # main workflow (align_sort_markdup)
+translated
+├── main.nf                             # main workflow (rna_seq_reads_to_counts)
 ├── modules                             # folder containing nextflow processes
-│   ├── align_and_tag.nf
-│   ├── index_bam.nf
-│   ├── mark_duplicates_and_sort.nf
-│   ├── merge_bams_samtools.nf
-│   └── name_sort.nf
+│   ├── collection_column_join.nf
+│   ├── cutadapt.nf
+│   ├── fastqc.nf
+│   ├── featurecounts.nf
+│   ├── hisat2.nf
+│   ├── multiqc.nf
+│   ├── picard_mark_duplicates.nf
+│   ├── rseqc_gene_body_coverage.nf
+│   ├── rseqc_infer_experiment.nf
+│   ├── rseqc_read_distribution.nf
+│   └── samtools_idxstats.nf
 ├── nextflow.config                     # config file to supply input information
+├── source                              # folder containing galaxy tool wrappers used to translate tools
 ├── subworkflows                        # folder containing nextflow subworkflows
-│   └── align.nf    
 └── templates                           # folder containing any scripts used by processes
-    └── markduplicates_helper.sh
+    ├── collection_column_join_script
+    └── multiqc_config
 ```
 
 Now we have performed translation using `janis translate`, we need to check the translated workflow for correctness.  
@@ -115,100 +147,133 @@ From here, we will do a test-run of the workflow using sample data, and make man
 
 ## Running the Translated Workflow
 
+<br>
 
 **Inspect main.nf**
 
 The main workflow translation appears as `main.nf` in the `translated/` folder. <br>
 
 This filename is just a convention, and we use it to provide clarity about the main entry point of the workflow. <br>
-In our case `main.nf` holds the nextflow definition for the  `align_sort_markdup.cwl` workflow. 
+In our case `main.nf` holds the nextflow definition for the  `rna-seq-reads-to-counts.ga` workflow. 
 
 > NOTE: <br>
 > Before continuing, feel free to have a look at the other nextflow files which have been generated during translation:<br>
-> Each CWL subworkflow appears as a nextflow `workflow` in the `subworkflows/` directory.<br>
-> Each CWL tool appears as a nextflow `process` in the `modules/` directory. 
+> Each Galaxy tool appears as a nextflow process in the `translated/modules/` directory. 
+> Each script used by nextflow processes appear in the `translated/templates/` directory.
+> Each Galaxy Tool Wrapper used during translation appears in the `translated/source/` directory. 
 
-In `main.nf` we see the nextflow workflows / processes called by the main workflow:
+In `main.nf` we see imports for nextflow processes called by the main workflow:
 
 ```
-include { ALIGN } from './subworkflows/align'
-include { INDEX_BAM } from './modules/index_bam'
-include { MARK_DUPLICATES_AND_SORT } from './modules/mark_duplicates_and_sort'
-include { MERGE_BAMS_SAMTOOLS as MERGE } from './modules/merge_bams_samtools'
-include { NAME_SORT } from './modules/name_sort'
+include { FASTQC as FASTQC1 } from './modules/fastqc'
+include { CUTADAPT } from './modules/cutadapt'
+include { FASTQC as FASTQC2 } from './modules/fastqc'
+include { HISAT2 } from './modules/hisat2'
+include { FEATURECOUNTS } from './modules/featurecounts'
+include { PICARD_MARK_DUPLICATES } from './modules/picard_mark_duplicates'
+include { SAMTOOLS_IDXSTATS } from './modules/samtools_idxstats'
+include { RSEQC_GENE_BODY_COVERAGE } from './modules/rseqc_gene_body_coverage'
+include { RSEQC_INFER_EXPERIMENT } from './modules/rseqc_infer_experiment'
+include { RSEQC_READ_DISTRIBUTION } from './modules/rseqc_read_distribution'
+include { COLLECTION_COLUMN_JOIN } from './modules/collection_column_join'
+include { MULTIQC } from './modules/multiqc'
 ```
 
 We also see that some nextflow `Channels` have been set up. <br>
 These are used to supply data according to nextflow's adoption of the *dataflow* programming model.
 ```
 // data which will be passed as channels
-ch_bams        = Channel.fromPath( params.bams ).toList()
-ch_reference   = Channel.fromPath( params.reference ).toList()
-ch_readgroups  = Channel.of( params.readgroups ).toList()
+ch_collection_column_join_script  = Channel.fromPath( params.collection_column_join_script )
+ch_in_input_fastqs_collection     = Channel.fromPath( params.in_input_fastqs_collection ).toList()
+ch_in_input_reference_gene_bed    = Channel.fromPath( params.in_input_reference_gene_bed )
+ch_multiqc_config                 = Channel.fromPath( params.multiqc_config )
 ```
-
-Focusing on the channel declarations, we want to note a few things:
-
-- `ch_bams` is analygous to the *'bams'* input in `align_sort_markdup.cwl`. <br>
-It declares a queue channel which expects the data supplied via `params.bams` are `path` types. <br>
-It then groups the bams together as a sole emission. <br>
-We will need to set up `params.bams` to supply this data.
-
-- `ch_reference` is analygous to the *'reference'* input in `align_sort_markdup.cwl`. <br>
-This channel collects the *'reference'* primary & secondary files as a sole emission. <br> 
-We will need to set up `params.reference` to supply this data. 
-
-- `ch_readgroups` is analygous to the *'readgroups'* input in `align_sort_markdup.cwl`. <br>
-It is the same as `ch_bams`, except it requires `val` types rather than `path` types. <br>
-We will need to set up `params.readgroups` to supply this data.
-
 
 > Note: `.toList()` <br><br>
 > Nextflow queue channels work differently to lists. <br>
 > Instead of supplying all items together, queue channels emit each item separately. <br> 
 > This results in a separate task being spawned for each item in the queue when the channel is used. <br>
-> As the CWL workflow input specifies that `bams` is a list, we use `.toList()` to group all items as a sole emission. <br>
-> This mimics a CWL array which is the datatype of the `bams` inputs. <br><br>
-> As it turns out, the CWL workflow ends up running the `align` step in parallel across the `bams` & `readgroups` inputs. <br><br>
+> As the Galaxy workflow specifies the `in_input_fastqs_collection` is a list of fastq files, we use `.toList()` to group all items as a sole emission. <br>
+> This mimics an array which is the datatype of the `in_input_fastqs_collection` input. <br><br>
+> As it turns out, the Galaxy workflow ends up running most steps in parallel across the `in_input_fastqs_collection` input. <br><br>
 > Parallelisation in nextflow happens by default. <br>
-> To facilitate this, the `.flatten()` method is called on  `ch_bams` and `ch_readgroups` when used in the `ALIGN` task. <br>
-> This emits items in `ch_bams` and `ch_readgroups` individually, spawning a new `ALIGN` task for each pair. <br><br>
-> We're kinda doing redundant work by calling `.toList()`, then `.flatten()` when `ch_bams` and `ch_readgroups` are used.<br>
-> `janis translate` isn't smart enough yet to detect this yet, but may do so in future. 
+> To facilitate this, the `.flatten()` method is called on `ch_in_input_fastqs_collection` when used in the `FASTQC1` and `CUTADAPT` tasks. <br>
+> This emits items in `ch_in_input_fastqs_collection` individually, spawning a new task for each file. <br><br>
+> Because other tasks use the output of `CUTADAPT`, they will also run in parallel per file.<br>
+> We're kinda doing redundant work by calling `.toList()`, then `.flatten()`, but `janis translate` isn't smart enough yet to detect this at present. 
 
 <br>
 
-The main `workflow {}` has 5 tasks. <br>
-Each task has been supplied values according to the source workflow. <br>
-Comments display the name of the process/workflow input which is being fed a particular value. 
+Now that we have covered imports and dataflow, we can look at the main `workflow` section. The main workflow is captured in the `workflow {}` section and has 12 tasks. 
 
+Each task has been supplied values according to the source workflow. <br>
+Comments display the name of the process input which is being fed a particular value. 
+
+Compare the main `workflow {}` section with the following visualisation of our Galaxy workflow (using the Galaxy workflow editor).
+
+main.nf
 ```
 workflow {
 
-    ALIGN(
-        ch_bams.flatten(),       // bam
-        ch_reference,            // reference
-        ch_readgroups.flatten()  // readgroup
+    FASTQC1(
+        ch_in_input_fastqs_collection.flatten()  // input_file
     )
 
-    INDEX_BAM(
-        MARK_DUPLICATES_AND_SORT.out.sorted_bam.map{ tuple -> tuple[0] }  // bam
+    CUTADAPT(
+        ch_in_input_fastqs_collection.flatten()  // library_input_1
     )
 
-    MARK_DUPLICATES_AND_SORT(
-        params.mark_duplicates_and_sort.script,  // script
-        NAME_SORT.out.name_sorted_bam,           // bam
-        params.NULL_VALUE,                       // input_sort_order
-        params.final_name                        // output_name
+    FASTQC2(
+        CUTADAPT.out.out1  // input_file
     )
 
-    MERGE(
-        ALIGN.out.tagged_bam.toList(),  // bams
-        params.final_name               // name
+    HISAT2(
+        CUTADAPT.out.out1  // library_input_1
     )
 
-    NAME_SORT(
-        MERGE.out.merged_bam  // bam
+    FEATURECOUNTS(
+        HISAT2.out.output_alignments  // alignment
+    )
+
+    PICARD_MARK_DUPLICATES(
+        HISAT2.out.output_alignments  // INPUT
+    )
+
+    SAMTOOLS_IDXSTATS(
+        HISAT2.out.output_alignments  // inputFile
+    )
+
+    RSEQC_GENE_BODY_COVERAGE(
+        HISAT2.out.output_alignments,   // batch_mode_input
+        ch_in_input_reference_gene_bed  // option_r
+    )
+
+    RSEQC_INFER_EXPERIMENT(
+        HISAT2.out.output_alignments,   // option_i
+        ch_in_input_reference_gene_bed  // option_r
+    )
+
+    RSEQC_READ_DISTRIBUTION(
+        HISAT2.out.output_alignments,   // option_i
+        ch_in_input_reference_gene_bed  // option_r
+    )
+
+    COLLECTION_COLUMN_JOIN(
+        FEATURECOUNTS.out.output_short.toList(),  // input_tabular
+        ch_collection_column_join_script          // collection_column_join_script
+    )
+
+    MULTIQC(
+        ch_multiqc_config,                            // config
+        FASTQC2.out.out_text_file,                    // unknown1
+        CUTADAPT.out.out_report,                      // unknown2
+        RSEQC_INFER_EXPERIMENT.out.outputFile,        // unknown3
+        PICARD_MARK_DUPLICATES.out.out_metrics_file,  // unknown4
+        SAMTOOLS_IDXSTATS.out.outputFile,             // unknown5
+        RSEQC_GENE_BODY_COVERAGE.out.outputtxt,       // unknown6
+        RSEQC_READ_DISTRIBUTION.out.outputFile,       // unknown7
+        FEATURECOUNTS.out.output_summary,             // unknown8
+        HISAT2.out.out_summary_file                   // unknown9
     )
 
 }
@@ -216,8 +281,15 @@ workflow {
 
 <br>
 
-Before `main.nf` can be run, we will need to supply values for the `params` variables. 
-This is done in `nextflow.config`. 
+Galaxy Workflow
+
+![alt-text](media/rnaseq_reads_to_counts_wf.PNG)
+
+
+<br>
+
+Now that we have looked at `main.nf`, let's run the translated Nextflow workflow. 
+To do this we will supply sample data as inputs using the global `params` variables in `nextflow.config`.
 
 <br>
 
@@ -248,32 +320,10 @@ params {
     outdir  = './outputs'
 
     // INPUTS (MANDATORY)
-    bams        = []          // (MANDATORY array)             eg. [file1, ...]
-    reference   = []          // (MANDATORY fastawithindexes)  eg. [fasta, amb, ann, bwt, dict, fai, pac, sa]
-    readgroups  = NULL_VALUE  // (MANDATORY array)             eg. [string1, ...]
-
-    // INPUTS (OPTIONAL)
-    final_name  = "final.bam" 
-
-    // PROCESS: ALIGN_AND_TAG
-    align_and_tag.cpus    = 8     
-    align_and_tag.memory  = 20000 
-
-    // PROCESS: INDEX_BAM
-    index_bam.memory  = 4000 
-
-    // PROCESS: MARK_DUPLICATES_AND_SORT
-    mark_duplicates_and_sort.script  = "(local_dir)/templates/markduplicates_helper.sh"
-    mark_duplicates_and_sort.cpus    = 8
-    mark_duplicates_and_sort.memory  = 40000
-
-    // PROCESS: MERGE_BAMS_SAMTOOLS
-    merge_bams_samtools.cpus    = 4    
-    merge_bams_samtools.memory  = 8000 
-
-    // PROCESS: NAME_SORT
-    name_sort.cpus    = 8     
-    name_sort.memory  = 26000 
+    collection_column_join_script  = NULL_VALUE  // (MANDATORY generic file)  
+    in_input_fastqs_collection     = []          // (MANDATORY array)         eg. [file1, ...]
+    in_input_reference_gene_bed    = NULL_VALUE  // (MANDATORY generic file)  
+    multiqc_config                 = NULL_VALUE  // (MANDATORY generic file)  
 
 }
 ```
@@ -286,57 +336,55 @@ params {
 
 <br>
 
-The auto-generated `nextflow.config` splits up workflow inputs using some headings. 
-
+The auto-generated `nextflow.config` splits up workflow inputs using some headings. <br>
+Here, all our inputs are mandatory, so we see the following heading: 
 ```
 // INPUTS (MANDATORY)
 ```
-Workflow inputs which are required to run the workflow. We must provide a value for these. 
+If our workflow had inputs which were optional, we would see them under this heading:
 
 ```
 // INPUTS (OPTIONAL)
 ```
-Workflow inputs which are not required to run the workflow. These are optional. 
-
-```
-// PROCESS: ALIGN_AND_TAG
-```
-Inputs which are specific to a particular process. <br>
-These are usually static values rather than files.  <br> 
-May be *mandatory* or *optional*. 
 
 <br>
 
 **Setting up Workflow Inputs**
 
-Janis Translate will enter values for workflow inputs where possible. <br>
-Others need to be manually supplied as they are specific to the input data you wish to use. 
+We need to supply values for those under the `// INPUTS (MANDATORY)` heading. 
+Specifically, we need to provide sample data for the following:
+```
+- collection_column_join_script     # script which the collection_column_join process will run
+- in_input_fastqs_collection        # .fastq format input reads
+- in_input_reference_gene_bed       # .bed format gene annotations
+- multiqc_config                    # script which the multiqc process will run
+```
 
-In our case, we need to supply values for those under the `// INPUTS (MANDATORY)` heading. 
-Specifically, we need to provide sample data for the `bams`, `reference`, and `readgroups` inputs. 
+Sample data for the `.fastq` and `.bed` inputs have been provided in the `sample_data` directory at the top level of this repository. 
 
-Copy and paste the following text, supplying values for these inputs in your current `nextflow.config` file:
+The scripts will have been copied by `janis translate` and placed in the `translated/templates` folder. 
+
+Copy and paste the following text to supply values for these inputs in your current `nextflow.config` file.
 
 ```
     // INPUTS (MANDATORY)
-    bams        = [
-        "../../../../sample_data/cwl/2895499223.bam",
-        "../../../../sample_data/cwl/2895499237.bam",
+    collection_column_join_script  = "templates/collection_column_join_script" 
+    in_input_fastqs_collection     = [
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-DG-basalvirgin.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-DH-basalvirgin.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-DI-basalpregnant.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-DJ-basalpregnant.fq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-DK-basallactate.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-DL-basallactate.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-LA-luminalvirgin.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-LB-luminalvirgin.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-LC-luminalpregnant.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-LD-luminalpregnant.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-LE-luminallactate.fastq.gz",
+        "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/MCL1-LF-luminallactate.fastq.gz",
     ]
-    reference   = [
-        "../../../../sample_data/cwl/chr17_test.fa",
-        "../../../../sample_data/cwl/chr17_test.fa.amb",
-        "../../../../sample_data/cwl/chr17_test.fa.ann",
-        "../../../../sample_data/cwl/chr17_test.fa.bwt",
-        "../../../../sample_data/cwl/chr17_test.fa.fai",
-        "../../../../sample_data/cwl/chr17_test.dict",
-        "../../../../sample_data/cwl/chr17_test.fa.pac",
-        "../../../../sample_data/cwl/chr17_test.fa.sa",
-    ] 
-    readgroups  = [
-        '"@RG\tID:2895499223\tPU:H7HY2CCXX.3.ATCACGGT\tSM:H_NJ-HCC1395-HCC1395\tLB:H_NJ-HCC1395-HCC1395-lg24-lib1\tPL:Illumina\tCN:WUGSC"',
-        '"@RG\tID:2895499237\tPU:H7HY2CCXX.4.ATCACGGT\tSM:H_NJ-HCC1395-HCC1395\tLB:H_NJ-HCC1395-HCC1395-lg24-lib1\tPL:Illumina\tCN:WUGSC"'
-    ]
+    in_input_reference_gene_bed    = "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/ucsc/mm10_RefSeq.bed"
+    multiqc_config                 = "templates/multiqc_config"
 ```
 
 <br>
@@ -359,11 +407,15 @@ nextflow run main.nf
 While the workflow runs, you will encounter this error:
 
 ```
-Access to 'MARK_DUPLICATES_AND_SORT.out' is undefined since the process 'MARK_DUPLICATES_AND_SORT' has not been invoked before accessing the output attribute
+Caused by:
+  Missing output file(s) `out1*` expected by process `CUTADAPT (10)`
+
+Command executed:
+  cutadapt     MCL1-LD-luminalpregnant.fastq.gz
 ```
 
 This is somewhat expected. Janis translate doesn't produce perfect translations - just the best it can do. <br>
-This is the first of ***3*** errors we will encounter and fix while making this workflow runnable. 
+This is the first of ***?*** errors we will encounter and fix while making this workflow runnable. 
 
 
 <br>
@@ -449,7 +501,6 @@ It seems there are a few issues:
 - Our process is missing an input for an adapter sequence to trim
 - Our shell command is missing the `-a` and `-o` arguments
 - We are not redirecting stdout to a report file
-
 
 <br>
 
@@ -657,7 +708,6 @@ process CUTADAPT {
 
 The second error is due to output collection in the `FASTQC` process. 
 
-
 **Error message**
 
 ```
@@ -678,8 +728,6 @@ Similar to Error 1, let's have a look at the process working directory to see wh
 
 It should look similar to the following: 
 ```
-- .
-- ..
 - .command.begin
 - .command.err
 - .command.log
@@ -719,7 +767,6 @@ Modify the `outputs:` section to resemble the following:
 
 The 3rd error is due to difficulties in translating some Galaxy Tool Wrappers. 
 
-
 **Error message**
 
 ```
@@ -729,7 +776,6 @@ Caused by:
 Command executed:
   hisat2     MCL1-DK-basallactate_cutadapt.fastq.gz
 ```
-
 
 <br>
 
@@ -798,6 +844,29 @@ The is also an error with the `outputs:` section of the `HISAT2` process, but we
 
 **Solution**
 
+To start, we will update the `HISAT2` process definition in `modules/hisat2.nf`. <br>
+We will then add a new `hisat2_index` param in `nextflow.config`, and feed this value to `HISAT2` in `main.nf`
+
+
+hisat2.nf:
+- Add a new `path` process input called `index` to accept a hisat2 index
+- Modify the `script:` section to include the `-x` argument and pass `${index[0].simpleName}` input as its value
+- Modify the `script:` section to include the `-U` argument and pass `${library_input_1}` as its value
+
+<br>
+
+>Note:<br>
+>Why use `${index[0].simpleName}` rather than `${index}`?<br>
+>Hisat2 indexes come as multiple chunks, where each chunk is an individual file.<br>
+>For example: hg38.1.ht2, hg38.2.ht2 .... etc. <br>
+><br>
+>This means that our `path index` input will be a list of files, rather than a single file.<br>
+>When running Hisat2, we supply the basename of the index chunks, rather than a full filename. <br>
+>For the example above, we would supply `-x hg38` as each chunk starts with this basename. <br>
+>To do this, we use `index[0]` to get the filename of the first chunk, then `.simpleName` to get its basename. 
+
+Your process definition should now look similar to the following: 
+
 modules/hisat2.nf
 ```
 process HISAT2 {
@@ -823,26 +892,66 @@ process HISAT2 {
 }
 ```
 
+<br>
+
+Now we have fixed up our process definition, we need to pass data to this input in the workflow. 
+
+Let's create a new `param` in `nextflow.config` to provide a path to the sample data:
+
 nextflow.config
 ```
     ...
     multiqc_config  = "templates/multiqc_config" 
     adapter         = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
-    hisat2_index    = "(local_dir)/sample_data/galaxy/rnaseq_reads_to_counts_workflow/hisat2_index/*.ht2"
+    hisat2_index    = "../../../../sample_data/galaxy/rnaseq_reads_to_counts_workflow/hisat2_index/*.ht2"
 ```
+
+>Note:<br>
+>A wildcard is used - `*.ht2` - when specifying files to include as the `hisat2_index` param.<br>
+>Nextflow supports glob patterns, so using the expression `*.ht2` will capture all the hisat2 index chunks which end in `.ht2` in the hisat2 index folder.
+
+<br>
+
+The last thing to do is feed the data to our `HISAT2` process in `main.nf`. <br>
+We will create a channel to supply the index as a list, then use that channel in the `HISAT2` task call. 
+
+Add a channel to the top of main.nf below the other channel definitions. 
+It should look similar to the following: 
 
 main.nf
 ```
+...
 // data which will be passed as channels
 ch_collection_column_join_script  = Channel.fromPath( params.collection_column_join_script )
 ch_in_input_fastqs_collection     = Channel.fromPath( params.in_input_fastqs_collection ).toList()
 ch_in_input_reference_gene_bed    = Channel.fromPath( params.in_input_reference_gene_bed )
 ch_multiqc_config                 = Channel.fromPath( params.multiqc_config )
-ch_hisat2_index                   = Channel.fromPath( params.hisat2_index ).toList()
+ch_hisat2_index                   = Channel.fromPath( params.hisat2_index ).toList()        <- 
+...
 ```
 
+Now feed that channel to `HISAT2` in the workflow body:
+
+```
+HISAT2(
+        CUTADAPT.out.out1,  // library_input_1
+        ch_hisat2_index     // index                <- 
+    )
+```
+
+<br>
+
+After you have made these changes, re-run the nextflow workflow. 
+
+From here, we will add the `-resume` flag so that previous tasks don't need to be executed:
+```
+nextflow run main.nf -resume
+```
+
+<br>
 
 ### Error 4: Hisat2 Outputs
+
 
 
 

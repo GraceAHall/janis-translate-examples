@@ -10,16 +10,16 @@ process CUTADAPT {
     val adapter
 
     output:
-    path "${library_input_1.simpleName}_cutadapt.fastq.gz", emit: out1
-    path "${library_input_1.simpleName}_cutadapt_report.txt", emit: out_report
+    path "${library_input_1.simpleName}.cutadapt.fastq.gz", emit: out1
+    path "${library_input_1.simpleName}.cutadapt.txt", emit: out_report
 
     script:
     """
     cutadapt \
     -a ${adapter} \
-    -o ${library_input_1.simpleName}_cutadapt.fastq.gz \
+    -o ${library_input_1.simpleName}.cutadapt.fastq.gz \
     ${library_input_1} \
-    > ${library_input_1.simpleName}_cutadapt_report.txt
+    > ${library_input_1.simpleName}.cutadapt.txt
     """
 
 }

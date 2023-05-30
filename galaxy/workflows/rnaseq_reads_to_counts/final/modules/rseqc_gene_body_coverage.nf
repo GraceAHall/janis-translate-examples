@@ -10,14 +10,15 @@ process RSEQC_GENE_BODY_COVERAGE {
     path option_r
 
     output:
-    path "output.geneBodyCoverage.curves.pdf", emit: outputcurvespdf
-    path "output.geneBodyCoverage.txt", emit: outputtxt
+    path "${batch_mode_input[0].simpleName}.geneBodyCoverage.curves.pdf", emit: outputcurvespdf
+    path "${batch_mode_input[0].simpleName}.geneBodyCoverage.txt", emit: outputtxt
 
     script:
     """
     geneBody_coverage.py \
-    ${batch_mode_input} \
+    -i ${batch_mode_input[0]} \
     -r ${option_r} \
+    -o ${batch_mode_input[0].simpleName}.geneBodyCoverage
     """
 
 }

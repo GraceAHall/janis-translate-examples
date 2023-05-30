@@ -1,0 +1,7 @@
+
+finish rnaseq reads to counts 
+add unicycler workflow
+move janis-translate-examples to the actual janis repo 
+sample data -> zip and send to richard to upload to cvfms 
+runsheet like this -> https://sydney-informatics-hub.github.io/customising-nfcore-workshop/ including setup, workshop schedule etc
+

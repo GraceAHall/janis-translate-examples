@@ -5,9 +5,16 @@
 
 ## Introduction
 
-This tutorial demonstrates translation of a Galaxy workflow to Nextflow using `janis translate`. 
+This tutorial demonstrates translation of a challenging Galaxy workflow to Nextflow using `janis translate`. 
 
 The workflow we will translate in this tutorial accepts raw RNA-seq reads as input, and produces gene counts for further analysis (eg. differential expression).
+
+Many of the Galaxy Tool Wrappers used in this workflow are challenging. They may:
+- Contain complex execution logic
+- Perform multiple commands
+- Use inbuilt Galaxy data for reference genomes, indexes, and annotation information.
+
+In these situations, the translated files produced by `janis translate` will need manual invertention to run. 
 
 
 <br>
@@ -422,7 +429,7 @@ This is the first of ***?*** errors we will encounter and fix while making this 
 
 ## Manual Adjustments
 
-### Error 1: Cutadapt
+### Error 1: CUTADAPT
 
 The first issue we need to address is caused by the cutadapt process translation. 
 
@@ -518,10 +525,10 @@ Update your `CUTADAPT` process definition in `modules/cutadapt.nf`.
 
 - Add a new `val` process input called `adapters` to accept adapter sequences
 - Modify the `script:` section to include the `-a` argument and pass the `${adapters}` input as its value
-- Modify the `script:` section to include the `-o` argument and pass `${library_input_1.simpleName}_cutadapt.fastq.gz` as its value
-- Modify the `script:` section to pipe stdout to `${library_input_1.simpleName}_cutadapt_report.txt`
-- Modify the `outputs:` section so that out1 collects `${library_input_1.simpleName}_cutadapt.fastq.gz`
-- Modify the `outputs:` section so that out_report collects `${library_input_1.simpleName}_cutadapt_report.txt`
+- Modify the `script:` section to include the `-o` argument and pass `${library_input_1.simpleName}.cutadapt.fastq.gz` as its value
+- Modify the `script:` section to pipe stdout to `${library_input_1.simpleName}.cutadapt.txt`
+- Modify the `outputs:` section so that out1 collects `${library_input_1.simpleName}.cutadapt.fastq.gz`
+- Modify the `outputs:` section so that out_report collects `${library_input_1.simpleName}.cutadapt.txt`
 
 Your process definition should now look similar to the following: 
 
@@ -536,16 +543,16 @@ process CUTADAPT {
     val adapter
 
     output:
-    path "${library_input_1.simpleName}_cutadapt.fastq.gz", emit: out1
-    path "${library_input_1.simpleName}_cutadapt_report.txt", emit: out_report
+    path "${library_input_1.simpleName}.cutadapt.fastq.gz", emit: out1
+    path "${library_input_1.simpleName}.cutadapt.txt", emit: out_report
 
     script:
     """
     cutadapt \
     -a ${adapter} \
-    -o ${library_input_1.simpleName}_cutadapt.fastq.gz \
+    -o ${library_input_1.simpleName}.cutadapt.fastq.gz \
     ${library_input_1} \
-    > ${library_input_1.simpleName}_cutadapt_report.txt
+    > ${library_input_1.simpleName}.cutadapt.txt
     """
 
 }
@@ -712,7 +719,7 @@ process CUTADAPT {
 
 <br>
 
-### Error 2: FastQC Outputs
+### Error 2: FASTQC1 Outputs
 
 The second error is due to output collection in the `FASTQC` process. 
 
@@ -767,13 +774,13 @@ We will change the output collection expressions so they capture the correct out
 Modify the `outputs:` section to resemble the following: 
 ```
     output:
-    path "${input_file.simpleName}_fastqc.html", emit: out_html_file
-    path "${input_file.simpleName}_fastqc.zip", emit: out_text_file
+    path "*_fastqc.html", emit: out_html_file
+    path "*_fastqc.zip", emit: out_text_file
 ```
 
 <br>
 
-### Error 3: Hisat2 Inputs
+### Error 3: HISAT2 Inputs
 
 The 3rd error is due to difficulties in translating some Galaxy Tool Wrappers. 
 
@@ -818,7 +825,7 @@ It should look similar to the following:
 ```
 process HISAT2 {
     
-    container "quay.io/biocontainers/hisat2:2.2.1--h87f3376_5"
+    container "quay.io/biocontainers/janis-translate-hisat2-2.2.1"
     publishDir "${params.outdir}/hisat2"
 
     input:
@@ -962,7 +969,7 @@ nextflow run main.nf -resume
 
 <br>
 
-### Error 4: Hisat2 Outputs
+### Error 4: HISAT2 Outputs
 
 The 4th issue is related to Hisat2 output collection. 
 
@@ -1008,50 +1015,71 @@ You will see something similar to these files:
 We see that the input `.fastq` and the `.ht2` hisat2 index files have now been staged correctly.<br>
 That said, we didn't produce any output files.
 
-By viewing `.command.out`, we can see that the read alignments appear in stdout, rather than having been redirected to a file. 
+By viewing `.command.out`, we can see that the read alignments appear in stdout, rather than having been redirected to a file. <br>
+In addition, the alignments are in SAM format, but the downstream tools take a sorted, indexed BAM file as input. 
+
+<br>
 
 This time we will look at the [hisat2 manual](http://daehwankimlab.github.io/hisat2/manual/) to see what the correct structure of the command should be. 
 
-Scrolling down to the **"Usage"** section we see the following: 
+Scrolling down to the **"Usage"** section we see the following:
 ```
 -S <hit>
 File to write SAM alignments to. By default, alignments are written to the “standard out” or “stdout” filehandle (i.e. the console).
 ```
 
-Scrolling down further to **"Output options"** we see the following:
+Scrolling further to **"Output options"** we see the following: 
 ```
 --summary-file
 Print alignment summary to this file.
 ```
 
-We will add these two arguments to our `script:` section so the outputs are being sent to the correct files.<br>
-We will additionally change `output:` collection patterns so these files are collected. 
+We will add the `--summary-file` and `-S` options, then will add some samtools commands to convert to bam then index. <br>
+We will additionally change `output:` collection patterns so these new files are collected. 
 
 <br>
 
 **Solution**
 
-Update the `script:` section of the `HISAT2` process to include these arguments. 
+Update the `script:` section of the `HISAT2` process to include these arguments and samtools commands. 
 
-Use the `library_input_1` process input to base your filenames on. <br>
-It should look similar to the following:
+For samtools, we want to:
+- Convert SAM -> BAM
+- Sort the BAM
+- Index the BAM
+
+Here is a sample you can use:
 ```
 script:
 """
 hisat2 \
 -x ${index[0].simpleName} \
 -U ${library_input_1} \
--S ${library_input_1.simpleName}_aligned.sam \
---summary-file ${library_input_1.simpleName}_alignment_summary.txt \
+--summary-file ${library_input_1.simpleName}.alignment.txt \
+-S out.sam 
+
+samtools view out.sam -o out.bam
+samtools sort out.bam -o sorted.bam
+samtools index sorted.bam -o sorted.bam.bai
+mv sorted.bam ${library_input_1.simpleName}.alignment.bam 
+mv sorted.bam.bai ${library_input_1.simpleName}.alignment.bam.bai
 """
 ```
 
 Now update the `output:` section to collect these same files:
 ```
 output:
-path "${library_input_1.simpleName}_alignment_summary.txt", emit: out_summary_file
-path "${library_input_1.simpleName}_aligned.sam", emit: output_alignments
+path "${library_input_1.simpleName}.alignment.txt", emit: out_summary_file
+path "${library_input_1.simpleName}.alignment.bam*", emit: output_alignments
 ```
+
+>Note:<br>
+>`path "${library_input_1.simpleName}.alignment.*", emit: output_alignments`<br>
+>The output collection pattern above includes a wildcard (*). <br>
+>This is so the .bai index file is also captured alongside the .bam file. <br>
+>The `output_alignments` output will be a tuple of 2 files: the alignment ending in `.bam` and the index ending in `.bam.bai`
+
+From here we will need to keep in mind that the alignments will be a tuple of 2 files (.bam & .bam.bai) rather than a single file. 
 
 After these changes have been made, re-run the Nextflow workflow:
 ```
@@ -1060,7 +1088,9 @@ nextflow run main.nf -resume
 
 <br>
 
-### Error 5: 
+### Error X: RSEQC_GENE_BODY_COVERAGE outputs
+
+Similar to other file output collection issues, the filename does not match any file in the working directory. 
 
 **Error message**
 
@@ -1074,6 +1104,143 @@ Command executed:
   geneBody_coverage.py     MCL1-DI-basalpregnant_cutadapt_aligned.sam     -r mm10_RefSeq.bed
 ```
 
+This tells us that 
+
+<br>
+
+**Diagnosing the Error**
+
+Checking the process working directory, you will see files similar to the following: 
+
+<br>
+
+**Solution**
+
+
+```
+script:
+"""
+geneBody_coverage.py \
+-i ${batch_mode_input[0]} \
+-r ${option_r} \
+-o ${batch_mode_input[0].simpleName}.geneBodyCoverage
+"""
+```
+
+```
+output:
+path "${batch_mode_input[0].simpleName}.geneBodyCoverage.curves.pdf", emit: outputcurvespdf
+path "${batch_mode_input[0].simpleName}.geneBodyCoverage.txt", emit: outputtxt
+```
+
+<br>
+
+### Error X: FEATURECOUNTS command
+
+This issue is due to the `script:` command we are supplying to featureCounts. 
+
+**Error message**
+
+```
+Error executing process > 'FEATURECOUNTS (1)'
+
+Caused by:
+  Process `FEATURECOUNTS (1)` terminated with an error exit status (255)
+
+Command executed:
+  featureCounts     MCL1-LE-luminallactate.alignment.bam
+```
+
+<br>
+
+**Diagnosing the Error**
+
+At the top of the `.command.err` for the FEATURECOUNTS process working directory, we see the intended usage of featureCounts:
+
+```
+Usage: featureCounts [options] -a <annotation_file> -o <output_file> input_file1 [input_file2] ...
+
+## Mandatory arguments:
+
+  -a <string>         Name of an annotation file. GTF/GFF format by default. See
+                      -F option for more format information. Inbuilt annotations
+                      (SAF format) is available in 'annotation' directory of the
+                      package. Gzipped file is also accepted.
+
+  -o <string>         Name of output file including read counts. A separate file
+                      including summary statistics of counting results is also
+                      included in the output ('<string>.summary'). Both files
+                      are in tab delimited format.
+
+## Optional arguments:
+# Annotation
+
+  -F <string>         Specify format of the provided annotation file. Acceptable
+                      formats include 'GTF' (or compatible GFF format) and
+                      'SAF'. 'GTF' by default.  For SAF format, please refer to
+                      Users Guide.
+```
+
+From the above, we must provide an annotation file using `-a`, and an output filename using `-o`.
+An additional file will be created using the `-o` option, with the same base name and `.summary` appended.
+
+We also see that featureCounts provides inbuilt annotation files which we can use. <br>
+We will be using the inbuilt 'mm10' annotation file which is in SAF format, so must also specify `-F "SAF"`
+
+Before we specify the annotation file, we must check where this is located in the container we are running. 
+
+We can check this path by running the container used by the `FEATURECOUNTS` process in interactive mode. 
+Once there, we can move around the container file system to find the annotation file. 
+
+To run a the process container interactively, we can use:
+```
+docker run -it quay.io/biocontainers/janis-translate-featurecounts-2.0.1
+```
+
+After picking around, we found the annotation files are in `/usr/local/annotation`.
+
+```
+# ls /usr/local/annotation
+hg19_RefSeq_exon.txt  mm10_RefSeq_exon.txt
+hg38_RefSeq_exon.txt  mm9_RefSeq_exon.txt
+```
+
+The file we want is therefore located at `/usr/local/annotation/mm10_RefSeq_exon.txt`.
+
+<br>
+
+**Solution**
+
+Update the `script:` section of your `FEATURECOUNTS` process.
+
+It should look similar to the following: 
+```
+script:
+"""
+featureCounts \
+-a /usr/local/annotation/mm10_RefSeq_exon.txt \
+-F "SAF" \
+-o ${alignment[0].simpleName}.txt \
+${alignment[0]} \
+"""
+```
+
+To collect the outputs, we will follow the instructions from featureCounts. 
+
+Update the `output_short` output to collect the same file as provided in `-o`.
+Update the `output_summary` output to collect the same file as provided in `-o`, except with `.summary` appended.
+
+Your `output:` section should now look similar to the following:
+```
+output:
+path "${alignment[0].simpleName}.txt", emit: output_short
+path "${alignment[0].simpleName}.txt.summary", emit: output_summary
+```
+
+### Error N: SAMTOOLS_IDXSTATS script
+
+**Error message**
+
 <br>
 
 **Diagnosing the Error**
@@ -1082,6 +1249,13 @@ Command executed:
 
 **Solution**
 
+```
+script:
+"""
+samtools idxstats \
+INPUT=${input_file[0]} \
+"""
+```
 
 ### Error N
 

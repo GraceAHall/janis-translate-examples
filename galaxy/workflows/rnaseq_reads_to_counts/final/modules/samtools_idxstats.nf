@@ -14,7 +14,7 @@ process SAMTOOLS_IDXSTATS {
     script:
     """
     samtools idxstats \
-    ${input_file} \
+    ${input_file[0]} \
     """
 
 }

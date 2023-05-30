@@ -428,6 +428,8 @@ The first issue we need to address is caused by the cutadapt process translation
 
 **Error message**
 ```
+Error executing process > 'CUTADAPT (10)'
+
 Caused by:
   Missing output file(s) `out1*` expected by process `CUTADAPT (10)`
 
@@ -462,8 +464,14 @@ cutadapt -a AACCGGTT -o output.fastq input.fastq > report.txt
 <br>
 
 
-When diagnosing these types of errors, its always a good idea to look at the process working directory. <br>
-Nextflow will provide this path any time a process encounters an error. 
+When diagnosing these types of errors, its always a good idea to look at the ***process working directory***. 
+
+Nextflow will provide this path any time a process encounters an error. <br>
+This part of the error message will look similar to the following: 
+```
+Work dir:
+  (local_dir)/galaxy/workflows/rnaseq_reads_to_counts/final/work/bc/545694fc279201b5dc1993acb89474
+```
 
 Navigate to this folder. You should see something similar to these files:
 ```
@@ -711,6 +719,8 @@ The second error is due to output collection in the `FASTQC` process.
 **Error message**
 
 ```
+Error executing process > 'FASTQC1 (4)'
+
 Caused by:
   Missing output file(s) `output.html` expected by process `FASTQC1 (4)`
 
@@ -770,6 +780,8 @@ The 3rd error is due to difficulties in translating some Galaxy Tool Wrappers.
 **Error message**
 
 ```
+Error executing process > 'HISAT2 (1)'
+
 Caused by:
   Process `HISAT2 (1)` terminated with an error exit status (1)
 
@@ -952,6 +964,133 @@ nextflow run main.nf -resume
 
 ### Error 4: Hisat2 Outputs
 
+The 4th issue is related to Hisat2 output collection. 
+
+**Error message**
+
+```
+Error executing process > 'HISAT2 (5)'
+
+Caused by:
+  Missing output file(s) `summary.txt` expected by process `HISAT2 (5)`
+
+Command executed:
+  hisat2     -x genome     -U MCL1-DK-basallactate_cutadapt.fastq.gz
+```
+
+Here we see again that Nextflow has tried to collect a file called `summary.txt` from the process working directory, but no such file was found. 
+
+<br>
+
+**Diagnosing the Error**
+
+Navigate to the process working directory. <br>
+You will see something similar to these files:
+```
+- .command.begin
+- .command.err
+- .command.log
+- .command.out
+- .command.run
+- .command.sh
+- .exitcode
+- MCL1-DK-basallactate_cutadapt.fastq.gz
+- genome.1.ht2
+- genome.2.ht2
+- genome.3.ht2
+- genome.4.ht2
+- genome.5.ht2
+- genome.6.ht2
+- genome.7.ht2
+- genome.8.ht2
+```
+
+We see that the input `.fastq` and the `.ht2` hisat2 index files have now been staged correctly.<br>
+That said, we didn't produce any output files.
+
+By viewing `.command.out`, we can see that the read alignments appear in stdout, rather than having been redirected to a file. 
+
+This time we will look at the [hisat2 manual](http://daehwankimlab.github.io/hisat2/manual/) to see what the correct structure of the command should be. 
+
+Scrolling down to the **"Usage"** section we see the following: 
+```
+-S <hit>
+File to write SAM alignments to. By default, alignments are written to the “standard out” or “stdout” filehandle (i.e. the console).
+```
+
+Scrolling down further to **"Output options"** we see the following:
+```
+--summary-file
+Print alignment summary to this file.
+```
+
+We will add these two arguments to our `script:` section so the outputs are being sent to the correct files.<br>
+We will additionally change `output:` collection patterns so these files are collected. 
+
+<br>
+
+**Solution**
+
+Update the `script:` section of the `HISAT2` process to include these arguments. 
+
+Use the `library_input_1` process input to base your filenames on. <br>
+It should look similar to the following:
+```
+script:
+"""
+hisat2 \
+-x ${index[0].simpleName} \
+-U ${library_input_1} \
+-S ${library_input_1.simpleName}_aligned.sam \
+--summary-file ${library_input_1.simpleName}_alignment_summary.txt \
+"""
+```
+
+Now update the `output:` section to collect these same files:
+```
+output:
+path "${library_input_1.simpleName}_alignment_summary.txt", emit: out_summary_file
+path "${library_input_1.simpleName}_aligned.sam", emit: output_alignments
+```
+
+After these changes have been made, re-run the Nextflow workflow:
+```
+nextflow run main.nf -resume
+```
+
+<br>
+
+### Error 5: 
+
+**Error message**
+
+```
+Error executing process > 'RSEQC_GENE_BODY_COVERAGE (1)'
+
+Caused by:
+  Missing output file(s) `output.geneBodyCoverage.curves.pdf` expected by process `RSEQC_GENE_BODY_COVERAGE (1)`
+
+Command executed:
+  geneBody_coverage.py     MCL1-DI-basalpregnant_cutadapt_aligned.sam     -r mm10_RefSeq.bed
+```
+
+<br>
+
+**Diagnosing the Error**
+
+<br>
+
+**Solution**
 
 
+### Error N
 
+**Error message**
+
+<br>
+
+**Diagnosing the Error**
+
+<br>
+
+**Solution**

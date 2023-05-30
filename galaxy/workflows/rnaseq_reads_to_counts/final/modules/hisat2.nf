@@ -10,14 +10,16 @@ process HISAT2 {
     path index
 
     output:
-    path "summary.txt", emit: out_summary_file
-    path "unknown_collection_pattern", emit: output_alignments
+    path "${library_input_1.simpleName}_alignment_summary.txt", emit: out_summary_file
+    path "${library_input_1.simpleName}_aligned.sam", emit: output_alignments
 
     script:
     """
     hisat2 \
     -x ${index[0].simpleName} \
     -U ${library_input_1} \
+    -S ${library_input_1.simpleName}_aligned.sam \
+    --summary-file ${library_input_1.simpleName}_alignment_summary.txt \
     """
 
 }

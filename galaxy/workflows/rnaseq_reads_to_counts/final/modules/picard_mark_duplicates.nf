@@ -9,13 +9,15 @@ process PICARD_MARK_DUPLICATES {
     path input
 
     output:
-    path "outFile.bam", emit: outFile
-    path "metrics_file.txt", emit: out_metrics_file
+    path "${input.simpleName}.markdup.bam", emit: outFile
+    path "${input.simpleName}.metrics.txt", emit: out_metrics_file
 
     script:
     """
     picard MarkDuplicates \
     INPUT=${input} \
+    OUTPUT=${input.simpleName}.markdup.bam \
+    METRICS_FILE=${input.simpleName}.metrics.txt \
     """
 
 }

@@ -9,16 +9,16 @@ process FEATURECOUNTS {
     path alignment
 
     output:
-    path "${alignment[0].simpleName}.txt", emit: output_short
-    path "${alignment[0].simpleName}.txt.summary", emit: output_summary
+    path "${alignment.simpleName}.txt", emit: output_short
+    path "${alignment.simpleName}.txt.summary", emit: output_summary
 
     script:
     """
     featureCounts \
     -a /usr/local/annotation/mm10_RefSeq_exon.txt \
     -F "SAF" \
-    -o ${alignment[0].simpleName}.txt \
-    ${alignment[0]} \
+    -o ${alignment.simpleName}.txt \
+    ${alignment} \
     """
 
 }

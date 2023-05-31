@@ -1015,8 +1015,9 @@ You will see something similar to these files:
 We see that the input `.fastq` and the `.ht2` hisat2 index files have now been staged correctly.<br>
 That said, we didn't produce any output files.
 
-By viewing `.command.out`, we can see that the read alignments appear in stdout, rather than having been redirected to a file. <br>
-In addition, the alignments are in SAM format, but the downstream tools take a sorted, indexed BAM file as input. 
+By viewing `.command.out`, we can see that the read alignments appear in stdout, rather than having been redirected to a file.<br>
+The alignments are in SAM format, but the downstream tools take a sorted BAM file, with some of them additionally requiring a BAM index.
+We will use some `samtools` commands in the `HISAT2` script section to generate the sorted indexed BAM.
 
 <br>
 
@@ -1034,7 +1035,7 @@ Scrolling further to **"Output options"** we see the following:
 Print alignment summary to this file.
 ```
 
-We will add the `--summary-file` and `-S` options, then will add some samtools commands to convert to bam then index. <br>
+We will add the `--summary-file` and `-S` options, then will add some samtools commands to convert to bam then sort & index. <br>
 We will additionally change `output:` collection patterns so these new files are collected. 
 
 <br>
@@ -1079,7 +1080,93 @@ path "${library_input_1.simpleName}.alignment.bam*", emit: output_alignments
 >This is so the .bai index file is also captured alongside the .bam file. <br>
 >The `output_alignments` output will be a tuple of 2 files: the alignment ending in `.bam` and the index ending in `.bam.bai`
 
+<br>
+
 From here we will need to keep in mind that the alignments will be a tuple of 2 files (.bam & .bam.bai) rather than a single file. 
+
+From viewing the main workflow in `main.nf`, we see that the following tasks use hisat2 alignment output:
+```
+- FEATURECOUNTS
+- PICARD_MARK_DUPLICATES
+- SAMTOOLS_IDXSTATS
+- RSEQC_GENE_BODY_COVERAGE
+- RSEQC_INFER_EXPERIMENT
+- RSEQC_READ_DISTRIBUTION
+```
+
+In `main.nf`, for each of the tasks above, change `HISAT2.out.output_alignments` to `HISAT2.out.output_alignments.map{ tuple -> tuple[0] }`
+This will supply the BAM file to the process, rather than both the BAM and BAI. 
+
+Your `main.nf` should now look similar to the following: 
+```
+workflow {
+
+    FASTQC1(
+        ch_in_input_fastqs_collection.flatten()  // input_file
+    )
+
+    CUTADAPT(
+        ch_in_input_fastqs_collection.flatten(), // library_input_1
+        params.adapter                           // adapter
+    )
+
+    FASTQC2(
+        CUTADAPT.out.out1  // input_file
+    )
+
+    HISAT2(
+        CUTADAPT.out.out1,  // library_input_1
+        ch_hisat2_index     // index
+    )
+
+    FEATURECOUNTS(
+        HISAT2.out.output_alignments.map{ tuple -> tuple[0] }  // alignment
+    )
+
+    PICARD_MARK_DUPLICATES(
+        HISAT2.out.output_alignments.map{ tuple -> tuple[0] }  // INPUT
+    )
+
+    SAMTOOLS_IDXSTATS(
+        HISAT2.out.output_alignments.map{ tuple -> tuple[0] }  // inputFile
+    )
+
+    RSEQC_GENE_BODY_COVERAGE(
+        HISAT2.out.output_alignments.map{ tuple -> tuple[0] },   // batch_mode_input
+        ch_in_input_reference_gene_bed  // option_r
+    )
+
+    RSEQC_INFER_EXPERIMENT(
+        HISAT2.out.output_alignments.map{ tuple -> tuple[0] },   // option_i
+        ch_in_input_reference_gene_bed  // option_r
+    )
+
+    RSEQC_READ_DISTRIBUTION(
+        HISAT2.out.output_alignments.map{ tuple -> tuple[0] },   // option_i
+        ch_in_input_reference_gene_bed  // option_r
+    )
+
+    COLLECTION_COLUMN_JOIN(
+        FEATURECOUNTS.out.output_short.toList(),  // input_tabular
+        ch_collection_column_join_script          // collection_column_join_script
+    )
+
+    MULTIQC(
+        ch_multiqc_config,                            // config
+        FASTQC2.out.out_text_file,                    // unknown1
+        CUTADAPT.out.out_report,                      // unknown2
+        RSEQC_INFER_EXPERIMENT.out.outputFile,        // unknown3
+        PICARD_MARK_DUPLICATES.out.out_metrics_file,  // unknown4
+        SAMTOOLS_IDXSTATS.out.outputFile,             // unknown5
+        RSEQC_GENE_BODY_COVERAGE.out.outputtxt,       // unknown6
+        RSEQC_READ_DISTRIBUTION.out.outputFile,       // unknown7
+        FEATURECOUNTS.out.output_summary,             // unknown8
+        HISAT2.out.out_summary_file                   // unknown9
+    )
+
+}
+```
+<br>
 
 After these changes have been made, re-run the Nextflow workflow:
 ```
@@ -1104,8 +1191,6 @@ Command executed:
   geneBody_coverage.py     MCL1-DI-basalpregnant_cutadapt_aligned.sam     -r mm10_RefSeq.bed
 ```
 
-This tells us that 
-
 <br>
 
 **Diagnosing the Error**
@@ -1121,16 +1206,16 @@ Checking the process working directory, you will see files similar to the follow
 script:
 """
 geneBody_coverage.py \
--i ${batch_mode_input[0]} \
+-i ${batch_mode_input} \
 -r ${option_r} \
--o ${batch_mode_input[0].simpleName}.geneBodyCoverage
+-o ${batch_mode_input.simpleName}
 """
 ```
 
 ```
 output:
-path "${batch_mode_input[0].simpleName}.geneBodyCoverage.curves.pdf", emit: outputcurvespdf
-path "${batch_mode_input[0].simpleName}.geneBodyCoverage.txt", emit: outputtxt
+path "${batch_mode_input.simpleName}.geneBodyCoverage.curves.pdf", emit: outputcurvespdf
+path "${batch_mode_input.simpleName}.geneBodyCoverage.txt", emit: outputtxt
 ```
 
 <br>
@@ -1220,8 +1305,8 @@ script:
 featureCounts \
 -a /usr/local/annotation/mm10_RefSeq_exon.txt \
 -F "SAF" \
--o ${alignment[0].simpleName}.txt \
-${alignment[0]} \
+-o ${alignment.simpleName}.txt \
+${alignment} \
 """
 ```
 
@@ -1233,8 +1318,8 @@ Update the `output_summary` output to collect the same file as provided in `-o`,
 Your `output:` section should now look similar to the following:
 ```
 output:
-path "${alignment[0].simpleName}.txt", emit: output_short
-path "${alignment[0].simpleName}.txt.summary", emit: output_summary
+path "${alignment.simpleName}.txt", emit: output_short
+path "${alignment.simpleName}.txt.summary", emit: output_summary
 ```
 
 ### Error N: SAMTOOLS_IDXSTATS script
@@ -1253,9 +1338,84 @@ path "${alignment[0].simpleName}.txt.summary", emit: output_summary
 script:
 """
 samtools idxstats \
-INPUT=${input_file[0]} \
+INPUT=${input_file} \
 """
 ```
+
+### Error X: PICARD_MARK_DUPLICATES
+
+**Error message**
+
+```
+Error executing process > 'PICARD_MARK_DUPLICATES (1)'
+
+Caused by:
+  Process `PICARD_MARK_DUPLICATES (1)` terminated with an error exit status (1)
+
+Command executed:
+  picard MarkDuplicates     INPUT=MCL1-LB-luminalvirgin.alignment.bam
+```
+
+<br>
+
+**Diagnosing the Error**
+
+Top of `.command.log`
+```
+ERROR: Option 'OUTPUT' is required.
+```
+
+<br>
+
+**Solution**
+
+script section 
+```
+script:
+"""
+picard MarkDuplicates \
+INPUT=${input} \
+OUTPUT=${input.simpleName}.markdup.bam \
+METRICS_FILE=${input.simpleName}.metrics.txt \
+"""
+```
+
+outputs section
+```
+output:
+path "${input.simpleName}.markdup.bam", emit: outFile
+path "${input.simpleName}.metrics.txt", emit: out_metrics_file
+```
+
+
+### Error X: MULTIQC
+
+**Error message**
+
+```
+Error executing process > 'MULTIQC'
+
+Caused by:
+  Missing output file(s) `report.html` expected by process `MULTIQC`
+
+Command executed:
+  multiqc .
+```
+
+<br>
+
+**Diagnosing the Error**
+
+<br>
+
+**Solution**
+
+```
+output:
+path "multiqc_report.html", emit: out_html_report
+path "multiqc_data/multiqc_*.txt", emit: out_stats
+```
+
 
 ### Error N
 

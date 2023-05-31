@@ -18,13 +18,12 @@ process MULTIQC {
     path unknown9
 
     output:
-    path "report.html", emit: out_html_report
-    path "report_data/multiqc_*.txt", emit: out_stats
+    path "multiqc_report.html", emit: out_html_report
+    path "multiqc_data/multiqc_*.txt", emit: out_stats
 
     script:
     """
-    multiqc multiqc_WDir \
-    --config ${config} \
+    multiqc . \
     """
 
 }

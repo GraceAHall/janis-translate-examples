@@ -9,12 +9,13 @@ process SAMTOOLS_IDXSTATS {
     path input_file
 
     output:
-    stdout emit: outputFile
+    path "${input_file.simpleName}.idxstats.txt", emit: outputFile
 
     script:
     """
     samtools idxstats \
-    ${input_file[0]} \
+    ${input_file} \
+    > ${input_file.simpleName}.idxstats.txt
     """
 
 }

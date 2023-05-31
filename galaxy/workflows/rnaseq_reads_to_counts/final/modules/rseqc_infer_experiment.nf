@@ -10,13 +10,14 @@ process RSEQC_INFER_EXPERIMENT {
     path option_r
 
     output:
-    stdout emit: outputFile
+    path "${option_i.simpleName}.infer_experiment.txt", emit: outputFile
 
     script:
     """
     infer_experiment.py \
     -i ${option_i} \
     -r ${option_r} \
+    > ${option_i.simpleName}.infer_experiment.txt
     """
 
 }

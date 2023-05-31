@@ -10,13 +10,14 @@ process RSEQC_READ_DISTRIBUTION {
     path option_r
 
     output:
-    stdout emit: outputFile
+    path "${option_i.simpleName}.read_distribution.txt", emit: outputFile
 
     script:
     """
     read_distribution.py \
     -i ${option_i} \
     -r ${option_r} \
+    > ${option_i.simpleName}.read_distribution.txt
     """
 
 }

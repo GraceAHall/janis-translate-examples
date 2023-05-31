@@ -16,8 +16,8 @@ process COLLECTION_COLUMN_JOIN {
     def input_tabular_joined = input_tabular.join(' ')
     """
     sh \
-    ${input_tabular_joined} \
     ${collection_column_join_script} \
+    ${input_tabular_joined} \
     """
 
 }

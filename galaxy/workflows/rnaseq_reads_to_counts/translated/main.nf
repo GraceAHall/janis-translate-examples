@@ -18,15 +18,15 @@ include { MULTIQC } from './modules/multiqc'
 ch_in_input_fastqs_collection  = Channel.fromPath( params.in_input_fastqs_collection ).toList()
 ch_hisat2_index                = Channel.fromPath( params.hisat2_index_path ).toList()
 
-
 // data which will be passed as variables
-// collection_column_join_script  = file( params.collection_column_join_script )
+collection_column_join_script  = file( params.collection_column_join_script )
 fastqc1_contaminants           = file( params.fastqc1_contaminants )
 fastqc1_limits                 = file( params.fastqc1_limits )
 fastqc2_contaminants           = file( params.fastqc2_contaminants )
 fastqc2_limits                 = file( params.fastqc2_limits )
 in_input_reference_gene_bed    = file( params.in_input_reference_gene_bed )
 multiqc_config                 = file( params.multiqc_config )
+
 
 workflow {
 
@@ -39,8 +39,8 @@ workflow {
     )
 
     CUTADAPT(
-        ch_in_input_fastqs_collection.flatten(), // library_input_1
-        params.cutadapt_adapter                  // adapter
+        ch_in_input_fastqs_collection.flatten(),  // library_input_1
+        params.cutadapt_adapter
     )
 
     FASTQC2(
@@ -52,9 +52,8 @@ workflow {
     )
 
     HISAT2(
-        CUTADAPT.out.out12,         // library_input_1
-        ch_hisat2_index,            // index_path
-        // params.hisat2_read11       // read11
+        CUTADAPT.out.out12,        // library_input_1
+        ch_hisat2_index,           // index_path
     )
 
     FEATURECOUNTS(
@@ -73,7 +72,6 @@ workflow {
     RSEQC_GENE_BODY_COVERAGE(
         HISAT2.out.output_alignments,             // batch_mode_input
         in_input_reference_gene_bed,              // refgene
-        // params.rseqc_gene_body_coverage_safename  // safename
     )
 
     RSEQC_INFER_EXPERIMENT(

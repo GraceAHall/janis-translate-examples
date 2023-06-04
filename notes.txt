@@ -1,7 +1,12 @@
 
-finish rnaseq reads to counts 
 add unicycler workflow
+finish rnaseq reads to counts 
+
 move janis-translate-examples to the actual janis repo 
 sample data -> zip and send to richard to upload to cvfms 
 runsheet like this -> https://sydney-informatics-hub.github.io/customising-nfcore-workshop/ including setup, workshop schedule etc
 
+janis translate: 
+- never allow stdout in nextflow. always add  "> filename.ext" then collect "filename.ext"
+- only arrays should become Channels. single files should be "varname = file( params.varname )"
+- theres a bug currently which is stripping out task inputs

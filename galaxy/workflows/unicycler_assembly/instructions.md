@@ -3,7 +3,6 @@
 
 To translate a workflow,  we use `janis translate`.
 
-
 For a Galaxy workflow we specify the .ga file:
 
 ```
